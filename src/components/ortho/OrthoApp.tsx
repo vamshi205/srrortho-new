@@ -233,9 +233,9 @@ export default function OrthoApp() {
       <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left: Procedure Selection & Active Procedures */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="glass-card rounded-xl p-3 sm:p-4">
-              <h2 className="font-display font-semibold text-base sm:text-lg mb-3 sm:mb-4">Select Procedures</h2>
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <div className="glass-card rounded-xl p-2.5 sm:p-4">
+              <h2 className="font-display font-semibold text-base sm:text-lg mb-2 sm:mb-4">Select Procedures</h2>
               {loading ? (
                 <div className="py-12 text-center text-muted-foreground">Loading procedures...</div>
               ) : (
