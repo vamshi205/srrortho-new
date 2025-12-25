@@ -27,6 +27,10 @@ export function ProcedureSelector({
     return searchProcedures(searchQuery, selectedType);
   }, [searchQuery, selectedType, searchProcedures]);
 
+  const hasActiveProcedures = activeProcedureNames.length > 0;
+  // Only reduce height on mobile when procedures are selected
+  const maxHeight = hasActiveProcedures ? 'max-h-[200px] sm:max-h-none' : 'max-h-[400px] sm:max-h-none';
+
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Search & Filter Header */}
@@ -60,8 +64,8 @@ export function ProcedureSelector({
         </div>
       </div>
 
-      {/* Procedures Grid - Scrollable on Mobile */}
-      <div className="max-h-[400px] sm:max-h-none overflow-y-auto sm:overflow-visible -mx-1 px-1 sm:mx-0 sm:px-0">
+      {/* Procedures Grid - Scrollable on Mobile, Reduced height on mobile when procedures are selected */}
+      <div className={`${maxHeight} overflow-y-auto sm:overflow-visible transition-all duration-300 -mx-1 px-1 sm:mx-0 sm:px-0`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
           {filteredProcedures.map((procedure, index) => {
             const isActive = activeProcedureNames.includes(procedure.name);
