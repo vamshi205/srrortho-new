@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 
 interface InstrumentImageModalProps {
   isOpen: boolean;
@@ -50,11 +48,8 @@ export function InstrumentImageModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+          <DialogTitle>
             {instrumentName}
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center justify-center min-h-[200px] p-4">

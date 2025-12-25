@@ -28,8 +28,8 @@ export function ProcedureSelector({
   }, [searchQuery, selectedType, searchProcedures]);
 
   const hasActiveProcedures = activeProcedureNames.length > 0;
-  // Only reduce height on mobile when procedures are selected
-  const maxHeight = hasActiveProcedures ? 'max-h-[200px] sm:max-h-none' : 'max-h-[400px] sm:max-h-none';
+  // Reduce height when procedures are selected (both mobile and desktop)
+  const maxHeight = hasActiveProcedures ? 'max-h-[200px] sm:max-h-[250px]' : 'max-h-[400px] sm:max-h-none';
 
   return (
     <div className="space-y-3 sm:space-y-4">
