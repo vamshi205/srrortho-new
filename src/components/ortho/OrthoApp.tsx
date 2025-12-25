@@ -1,0 +1,305 @@
+import { useState, useRef, useCallback, useEffect } from 'react';
+import html2pdf from 'html2pdf.js';
+import { Activity, Printer, Download, Trash2, X, Settings2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LoginScreen } from '@/components/ortho/LoginScreen';
+import { ProcedureSelector } from '@/components/ortho/ProcedureSelector';
+import { ProcedureCard } from '@/components/ortho/ProcedureCard';
+import { SummaryPanel } from '@/components/ortho/SummaryPanel';
+import { PrintPreview } from '@/components/ortho/PrintPreview';
+import { useProcedures } from '@/hooks/useProcedures';
+import { Procedure, ActiveProcedure, SizeQty } from '@/types/procedure';
+
+export default function OrthoApp() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { procedures, loading, procedureTypes, refetchSingleProcedure, searchProcedures, searchInstruments, searchItems } = useProcedures();
+
+  // Initialize with empty array - no procedures selected by default
+  const [activeProcedures, setActiveProcedures] = useState<ActiveProcedure[]>([]);
+  const [collapsedProcedures, setCollapsedProcedures] = useState<Set<string>>(new Set());
+  const [materialType, setMaterialType] = useState('SS');
+  const [hospitalName, setHospitalName] = useState('');
+  const [dcNo, setDcNo] = useState('');
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  const printRef = useRef<HTMLDivElement>(null);
+
+  // Ensure no procedures are selected on mount and after login
+  useEffect(() => {
+    setActiveProcedures([]);
+  }, []);
+
+  // Clear procedures when user logs in
+  useEffect(() => {
+    if (isAuthenticated) {
+      setActiveProcedures([]);
+    }
+  }, [isAuthenticated]);
+
+  const handleSelectProcedure = useCallback((procedure: Procedure) => {
+    setActiveProcedures((prev) => {
+      const exists = prev.find((p) => p.name === procedure.name);
+      if (exists) {
+        return prev.filter((p) => p.name !== procedure.name);
+      }
+      const activeProcedure: ActiveProcedure = {
+        ...procedure,
+        selectedItems: new Map(),
+        selectedFixedItems: new Map(procedure.fixedItems.map((fi) => [fi.name, true])),
+        fixedQtyEdits: new Map(),
+        instrumentImageMapping: procedure.instrumentImageMapping || {},
+      };
+      return [...prev, activeProcedure];
+    });
+  }, []);
+
+  const handleRemoveProcedure = useCallback((name: string) => {
+    setActiveProcedures((prev) => prev.filter((p) => p.name !== name));
+  }, []);
+
+  const handleRefreshProcedure = useCallback(async (name: string) => {
+    const updated = await refetchSingleProcedure(name);
+    if (updated) {
+      setActiveProcedures((prev) =>
+        prev.map((p) =>
+          p.name === name ? { 
+            ...p, 
+            ...updated, 
+            selectedItems: p.selectedItems, 
+            selectedFixedItems: p.selectedFixedItems, 
+            fixedQtyEdits: p.fixedQtyEdits,
+            instrumentImageMapping: updated.instrumentImageMapping || p.instrumentImageMapping || {}
+          } : p
+        )
+      );
+    }
+  }, [refetchSingleProcedure]);
+
+  const handleItemToggle = useCallback((procedureName: string, itemName: string, checked: boolean) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => {
+        if (p.name !== procedureName) return p;
+        const newMap = new Map(p.selectedItems);
+        if (checked) {
+          newMap.set(itemName, { itemName, sizeQty: [] });
+        } else {
+          newMap.delete(itemName);
+        }
+        return { ...p, selectedItems: newMap };
+      })
+    );
+  }, []);
+
+  const handleSizeQtyChange = useCallback((procedureName: string, itemName: string, sizeQty: SizeQty[]) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => {
+        if (p.name !== procedureName) return p;
+        const newMap = new Map(p.selectedItems);
+        newMap.set(itemName, { itemName, sizeQty });
+        return { ...p, selectedItems: newMap };
+      })
+    );
+  }, []);
+
+  const handleFixedItemToggle = useCallback((procedureName: string, itemName: string, checked: boolean) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => {
+        if (p.name !== procedureName) return p;
+        const newMap = new Map(p.selectedFixedItems);
+        newMap.set(itemName, checked);
+        return { ...p, selectedFixedItems: newMap };
+      })
+    );
+  }, []);
+
+  const handleFixedQtyChange = useCallback((procedureName: string, itemName: string, qty: string) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => {
+        if (p.name !== procedureName) return p;
+        const newMap = new Map(p.fixedQtyEdits);
+        newMap.set(itemName, qty);
+        return { ...p, fixedQtyEdits: newMap };
+      })
+    );
+  }, []);
+
+  const handleAddInstrument = useCallback((procedureName: string, instrument: string) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => {
+        if (p.name !== procedureName) return p;
+        if (p.instruments.includes(instrument)) return p;
+        return { ...p, instruments: [...p.instruments, instrument] };
+      })
+    );
+  }, []);
+
+  const handleRemoveInstrument = useCallback((procedureName: string, instrument: string) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => {
+        if (p.name !== procedureName) return p;
+        return { ...p, instruments: p.instruments.filter((i) => i !== instrument) };
+      })
+    );
+  }, []);
+
+  const handleAddItem = useCallback((procedureName: string, itemName: string) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => {
+        if (p.name === procedureName && !p.items.includes(itemName)) {
+          return { ...p, items: [...p.items, itemName] };
+        }
+        return p;
+      })
+    );
+  }, []);
+
+  const handlePrint = () => {
+    if (!hospitalName || !dcNo) {
+      setShowSettingsModal(true);
+      return;
+    }
+    setShowPrintModal(true);
+  };
+
+  const handleSavePDF = async () => {
+    if (!printRef.current) return;
+    const opt = {
+      margin: 10,
+      filename: `SRR-Ortho-Implant-DC-${dcNo || 'draft'}.pdf`,
+      image: { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+    };
+    await html2pdf().set(opt).from(printRef.current).save();
+  };
+
+  const handleClearAll = () => {
+    setActiveProcedures([]);
+    setHospitalName('');
+    setDcNo('');
+  };
+
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-hero">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-md border-b border-border">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="font-display font-bold text-lg">SRR Ortho Implant</h1>
+              <p className="text-xs text-muted-foreground">DC Generator</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={materialType} onValueChange={setMaterialType}>
+              <SelectTrigger className="w-32 h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SS">SS (Steel)</SelectItem>
+                <SelectItem value="Titanium">Titanium</SelectItem>
+                <SelectItem value="None">No Prefix</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="icon" onClick={() => setShowSettingsModal(true)}><Settings2 className="w-4 h-4" /></Button>
+            <Button variant="outline" size="icon" onClick={handleClearAll}><Trash2 className="w-4 h-4" /></Button>
+            <Button onClick={handlePrint} className="btn-gradient"><Printer className="w-4 h-4 mr-2" />Print</Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-6">
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Left: Procedure Selection & Active Procedures */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="glass-card rounded-xl p-4">
+              <h2 className="font-display font-semibold text-lg mb-4">Select Procedures</h2>
+              {loading ? (
+                <div className="py-12 text-center text-muted-foreground">Loading procedures...</div>
+              ) : (
+                <ProcedureSelector
+                  procedures={procedures}
+                  procedureTypes={procedureTypes}
+                  activeProcedureNames={activeProcedures.map((p) => p.name)}
+                  onSelectProcedure={handleSelectProcedure}
+                  searchProcedures={searchProcedures}
+                />
+              )}
+            </div>
+
+            {activeProcedures.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="font-display font-semibold text-lg">Active Procedures</h2>
+                {activeProcedures.map((procedure) => (
+                  <ProcedureCard
+                    key={procedure.name}
+                    procedure={procedure}
+                    isCollapsed={collapsedProcedures.has(procedure.name)}
+                    onToggleCollapse={() => setCollapsedProcedures((prev) => { const next = new Set(prev); next.has(procedure.name) ? next.delete(procedure.name) : next.add(procedure.name); return next; })}
+                    onRemove={() => handleRemoveProcedure(procedure.name)}
+                    onRefresh={() => handleRefreshProcedure(procedure.name)}
+                    onItemToggle={(item, checked) => handleItemToggle(procedure.name, item, checked)}
+                    onSizeQtyChange={(item, sq) => handleSizeQtyChange(procedure.name, item, sq)}
+                    onFixedItemToggle={(item, checked) => handleFixedItemToggle(procedure.name, item, checked)}
+                    onFixedQtyChange={(item, qty) => handleFixedQtyChange(procedure.name, item, qty)}
+                    onAddInstrument={(inst) => handleAddInstrument(procedure.name, inst)}
+                    onRemoveInstrument={(inst) => handleRemoveInstrument(procedure.name, inst)}
+                    onAddItem={(item) => handleAddItem(procedure.name, item)}
+                    onSearchItems={searchItems}
+                    instrumentSuggestions={[]}
+                    onSearchInstruments={searchInstruments}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Summary */}
+          <div className="lg:col-span-1">
+            <div className="glass-card rounded-xl p-4 sticky top-20">
+              <h2 className="font-display font-semibold text-lg mb-4">Summary</h2>
+              <SummaryPanel activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Settings Modal */}
+      <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>DC Details</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div><Label>Hospital Name</Label><Input value={hospitalName} onChange={(e) => setHospitalName(e.target.value)} placeholder="Enter hospital name" className="mt-1" /></div>
+            <div><Label>DC Number</Label><Input value={dcNo} onChange={(e) => setDcNo(e.target.value)} placeholder="Enter DC number" className="mt-1" /></div>
+            <Button onClick={() => setShowSettingsModal(false)} className="w-full">Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Print Modal */}
+      <Dialog open={showPrintModal} onOpenChange={setShowPrintModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">Print Preview<Button variant="ghost" size="icon" onClick={() => setShowPrintModal(false)}><X className="w-4 h-4" /></Button></DialogTitle>
+          </DialogHeader>
+          <PrintPreview ref={printRef} activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
+          <div className="flex gap-3 mt-4">
+            <Button onClick={() => window.print()} className="flex-1"><Printer className="w-4 h-4 mr-2" />Print</Button>
+            <Button onClick={handleSavePDF} variant="outline" className="flex-1"><Download className="w-4 h-4 mr-2" />Save PDF</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
