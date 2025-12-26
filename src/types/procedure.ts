@@ -15,6 +15,8 @@ export interface Procedure {
   instruments: string[];
   type: string;
   instrumentImageMapping?: Record<string, string | null>;
+  fixedItemImageMapping?: Record<string, string | null>;
+  itemImageMapping?: Record<string, string | null>;
 }
 
 export interface SelectedItem {
@@ -28,4 +30,6 @@ export interface ActiveProcedure extends Procedure {
   fixedQtyEdits: Map<string, string>;
   instruments: string[];
   instrumentImageMapping?: Record<string, string | null>;
+  fixedItemImageMapping?: Record<string, string | null>;
+  itemImageMapping?: Record<string, string | null>;
 }

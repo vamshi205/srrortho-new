@@ -15,10 +15,20 @@ export function useProcedures() {
   const itemFuse = useRef<Fuse<string> | null>(null);
   const instrumentFuse = useRef<Fuse<string> | null>(null);
 
-  // Instrument image mapping - fallback if not in Google Sheets
+  // Image mapping - fallback if not in Google Sheets
   const instrumentImageMap: Record<string, string> = {
     // Add instrument images here as fallback
     // Format: "Instrument Name": "Image URL"
+  };
+  
+  const fixedItemImageMap: Record<string, string> = {
+    // Add fixed item images here as fallback
+    // Format: "Fixed Item Name": "Image URL"
+  };
+  
+  const itemImageMap: Record<string, string> = {
+    // Add selectable item images here as fallback
+    // Format: "Item Name": "Image URL"
   };
 
   const parseProcedures = useCallback((data: string[][]): Procedure[] => {
@@ -26,8 +36,8 @@ export function useProcedures() {
       .filter((row) => row[0]?.trim()) // Filter rows with a procedure name
       .map((row) => {
         // Parse columns directly from array (matching implant-checklist format)
-        // [name, items, fixedItems, fixedQty, instruments, type, instrumentImages]
-        const [name, items, fixedItems, fixedQty, instruments, type, instrumentImages] = row;
+        // [name, items, fixedItems, fixedQty, instruments, type, instrumentImages, fixedItemImages, itemImages]
+        const [name, items, fixedItems, fixedQty, instruments, type, instrumentImages, fixedItemImages, itemImages] = row;
         
         // Parse fixed items and qtys strictly by | only
         const fixedItemsArr = fixedItems ? fixedItems.split('|').map(s => s.trim()).filter(Boolean) : [];
@@ -50,10 +60,34 @@ export function useProcedures() {
           ? instrumentImages.split('|').map(url => url.trim()).filter(Boolean) 
           : [];
         
+        // Parse fixed item images
+        const fixedItemImagesArr = fixedItemImages 
+          ? fixedItemImages.split('|').map(url => url.trim()).filter(Boolean) 
+          : [];
+        
+        // Parse selectable item images
+        const itemImagesArr = itemImages 
+          ? itemImages.split('|').map(url => url.trim()).filter(Boolean) 
+          : [];
+        
         // Create instrument-image mapping for this procedure
         const instrumentImageMapping: Record<string, string | null> = {};
         instrumentsArr.forEach((inst, idx) => {
           instrumentImageMapping[inst] = instrumentImagesArr[idx] || instrumentImageMap[inst] || null;
+        });
+        
+        // Create fixed item-image mapping for this procedure
+        const fixedItemImageMapping: Record<string, string | null> = {};
+        fixedItemsArr.forEach((item, idx) => {
+          fixedItemImageMapping[item] = fixedItemImagesArr[idx] || fixedItemImageMap[item] || null;
+        });
+        
+        // Create selectable item-image mapping for this procedure
+        const itemImageMapping: Record<string, string | null> = {};
+        editableItems.forEach((item, idx) => {
+          // Extract item name without size/qty pattern for matching
+          const itemName = item.match(/^(.+?)\s*\{/)?.[1]?.trim() || item.trim();
+          itemImageMapping[itemName] = itemImagesArr[idx] || itemImageMap[itemName] || null;
         });
         
         return {
@@ -63,6 +97,8 @@ export function useProcedures() {
           instruments: instrumentsArr,
           type: type ? type.trim() : 'General',
           instrumentImageMapping,
+          fixedItemImageMapping,
+          itemImageMapping,
         };
       });
   }, []);

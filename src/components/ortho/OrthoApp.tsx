@@ -63,6 +63,8 @@ export default function OrthoApp() {
         selectedFixedItems: new Map(procedure.fixedItems.map((fi) => [fi.name, true])),
         fixedQtyEdits: new Map(),
         instrumentImageMapping: procedure.instrumentImageMapping || {},
+        fixedItemImageMapping: procedure.fixedItemImageMapping || {},
+        itemImageMapping: procedure.itemImageMapping || {},
       };
       // Hide selector when a procedure is selected
       setShowProcedureSelector(false);
@@ -93,7 +95,9 @@ export default function OrthoApp() {
             selectedItems: p.selectedItems, 
             selectedFixedItems: p.selectedFixedItems, 
             fixedQtyEdits: p.fixedQtyEdits,
-            instrumentImageMapping: updated.instrumentImageMapping || p.instrumentImageMapping || {}
+            instrumentImageMapping: updated.instrumentImageMapping || p.instrumentImageMapping || {},
+            fixedItemImageMapping: updated.fixedItemImageMapping || p.fixedItemImageMapping || {},
+            itemImageMapping: updated.itemImageMapping || p.itemImageMapping || {}
           } : p
         )
       );

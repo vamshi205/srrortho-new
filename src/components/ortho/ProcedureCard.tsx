@@ -83,7 +83,7 @@ export function ProcedureCard({
     });
   }, [procedure.selectedItems]);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [selectedInstrumentImage, setSelectedInstrumentImage] = useState<{
+  const [selectedImage, setSelectedImage] = useState<{
     name: string;
     url: string | null;
     fallbackUrls?: {
@@ -93,7 +93,7 @@ export function ProcedureCard({
       original: string;
     } | null;
   } | null>(null);
-  const [allInstrumentImages, setAllInstrumentImages] = useState<Array<{
+  const [allImages, setAllImages] = useState<Array<{
     name: string;
     url: string;
     fallbackUrls?: {
@@ -200,28 +200,32 @@ export function ProcedureCard({
     };
   };
 
-  const handleShowInstrumentImage = (instrumentName: string) => {
-    // Get all instruments with images
-    const instrumentsWithImages = procedure.instruments
-      .filter((inst) => procedure.instrumentImageMapping?.[inst])
-      .map((inst) => {
-        const imageUrl = procedure.instrumentImageMapping?.[inst] || null;
+  const handleShowImage = (
+    itemName: string,
+    imageMapping: Record<string, string | null> | undefined,
+    allItems: string[]
+  ) => {
+    // Get all items with images
+    const itemsWithImages = allItems
+      .filter((item) => imageMapping?.[item])
+      .map((item) => {
+        const imageUrl = imageMapping?.[item] || null;
         const urlOptions = convertGoogleDriveUrl(imageUrl);
         const workingUrl = urlOptions ? urlOptions.thumbnail : imageUrl;
         return {
-          name: inst,
+          name: item,
           url: workingUrl,
           fallbackUrls: urlOptions
         };
       });
 
-    if (instrumentsWithImages.length > 0) {
-      setAllInstrumentImages(instrumentsWithImages);
-      const index = instrumentsWithImages.findIndex((img) => img.name === instrumentName);
+    if (itemsWithImages.length > 0) {
+      setAllImages(itemsWithImages);
+      const index = itemsWithImages.findIndex((img) => img.name === itemName);
       setCurrentImageIndex(index >= 0 ? index : 0);
       
-      const selected = instrumentsWithImages[index >= 0 ? index : 0];
-      setSelectedInstrumentImage({
+      const selected = itemsWithImages[index >= 0 ? index : 0];
+      setSelectedImage({
         name: selected.name,
         url: selected.url,
         fallbackUrls: selected.fallbackUrls
@@ -230,11 +234,29 @@ export function ProcedureCard({
     }
   };
 
+  const handleShowInstrumentImage = (instrumentName: string) => {
+    handleShowImage(instrumentName, procedure.instrumentImageMapping, procedure.instruments);
+  };
+
+  const handleShowFixedItemImage = (itemName: string) => {
+    const fixedItemNames = procedure.fixedItems.map(item => item.name);
+    handleShowImage(itemName, procedure.fixedItemImageMapping, fixedItemNames);
+  };
+
+  const handleShowSelectableItemImage = (itemName: string) => {
+    // Extract item names from items (remove size/qty patterns)
+    const itemNames = procedure.items.map(item => {
+      const parsed = parseSizeQtyFromItem(item);
+      return parsed.name;
+    });
+    handleShowImage(itemName, procedure.itemImageMapping, itemNames);
+  };
+
   const handleNavigateImage = (newIndex: number) => {
-    if (allInstrumentImages.length > 0 && newIndex >= 0 && newIndex < allInstrumentImages.length) {
+    if (allImages.length > 0 && newIndex >= 0 && newIndex < allImages.length) {
       setCurrentImageIndex(newIndex);
-      const selected = allInstrumentImages[newIndex];
-      setSelectedInstrumentImage({
+      const selected = allImages[newIndex];
+      setSelectedImage({
         name: selected.name,
         url: selected.url,
         fallbackUrls: selected.fallbackUrls
@@ -321,6 +343,15 @@ export function ProcedureCard({
                       <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 break-words sm:break-normal`}>
                         {fixedItem.name}
                       </span>
+                      {procedure.fixedItemImageMapping?.[fixedItem.name] && (
+                        <button
+                          onClick={() => handleShowFixedItemImage(fixedItem.name)}
+                          className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors text-primary flex-shrink-0"
+                          title={`View image of ${fixedItem.name}`}
+                        >
+                          <Info className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 w-full sm:w-auto justify-end sm:justify-start">
                         <span className="text-xs font-medium text-muted-foreground whitespace-nowrap hidden sm:inline">Qty:</span>
                         <Input
@@ -393,6 +424,15 @@ export function ProcedureCard({
                         <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 break-words sm:break-normal`}>
                           {parsed.name}
                         </span>
+                        {procedure.itemImageMapping?.[parsed.name] && (
+                          <button
+                            onClick={() => handleShowSelectableItemImage(parsed.name)}
+                            className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors text-primary flex-shrink-0"
+                            title={`View image of ${parsed.name}`}
+                          >
+                            <Info className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         {isSelected && (
                           <Button
                             variant="ghost"
@@ -633,20 +673,20 @@ export function ProcedureCard({
         </div>
       )}
 
-      {/* Instrument Image Modal */}
-      {selectedInstrumentImage && (
+      {/* Image Modal (for instruments, fixed items, and selectable items) */}
+      {selectedImage && (
         <InstrumentImageModal
           isOpen={showImageModal}
           onClose={() => {
             setShowImageModal(false);
-            setSelectedInstrumentImage(null);
-            setAllInstrumentImages([]);
+            setSelectedImage(null);
+            setAllImages([]);
             setCurrentImageIndex(0);
           }}
-          instrumentName={selectedInstrumentImage.name}
-          imageUrl={selectedInstrumentImage.url}
-          fallbackUrls={selectedInstrumentImage.fallbackUrls || null}
-          allInstruments={allInstrumentImages}
+          instrumentName={selectedImage.name}
+          imageUrl={selectedImage.url}
+          fallbackUrls={selectedImage.fallbackUrls || null}
+          allInstruments={allImages}
           currentIndex={currentImageIndex}
           onNavigate={handleNavigateImage}
         />

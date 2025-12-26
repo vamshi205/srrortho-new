@@ -253,118 +253,70 @@
   }
 }
 
-/* Print styles */
+/* Print styles - simplified like html2pdf approach */
 @media print {
-  /* Reset body and html */
-  html,
-  body {
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    background: white !important;
-  }
-
-  /* Hide main app content but keep portal */
-  body > *:not([data-radix-portal]),
-  #root > div:first-child:not([data-radix-portal]),
-  #root > *:not([data-radix-portal]) {
+  /* Hide everything except print content */
+  body > *:not([data-print-content]):not([data-radix-portal]),
+  #root > *:not([data-print-content]):not([data-radix-portal]) {
     display: none !important;
-    visibility: hidden !important;
   }
 
-  /* Show dialog portal */
+  /* Show portal and make it static */
   [data-radix-portal] {
     display: block !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    z-index: 99999 !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    height: auto !important;
     background: white !important;
     margin: 0 !important;
     padding: 0 !important;
-    visibility: visible !important;
   }
 
-  /* Hide everything in portal except dialog content */
-  [data-radix-portal] > *:not([data-radix-dialog-content]) {
-    display: none !important;
-    visibility: hidden !important;
-  }
-
-  /* Hide dialog overlay */
+  /* Hide overlay */
   [data-radix-dialog-overlay] {
     display: none !important;
   }
 
-  /* Show dialog content */
+  /* Show dialog content as static */
   [data-radix-dialog-content] {
     display: block !important;
     position: static !important;
     transform: none !important;
     max-width: 100% !important;
-    max-height: none !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
     background: white !important;
     inset: auto !important;
-    overflow: visible !important;
-    visibility: visible !important;
-    opacity: 1 !important;
   }
 
-  /* Hide dialog header and buttons - more aggressive */
+  /* Hide dialog UI elements */
   [data-radix-dialog-content] .no-print,
   [data-radix-dialog-content] [data-no-print],
   [data-radix-dialog-content] > header,
   [data-radix-dialog-content] > div:first-child:not([data-print-content]),
-  [data-radix-dialog-content] button[data-radix-dialog-close],
-  [data-radix-dialog-content] [data-radix-dialog-close],
-  [data-radix-dialog-content] [role="button"][aria-label*="Close"],
-  [data-radix-dialog-content] button[aria-label*="close"],
-  [data-radix-dialog-content] button[aria-label*="Close"],
-  button[aria-label*="Close"],
-  button[aria-label*="close"],
-  [data-radix-dialog-content] svg[data-lucide="x"],
-  [data-radix-dialog-content] svg[data-lucide="X"],
-  [data-radix-dialog-content] button:has(svg[data-lucide="x"]),
-  [data-radix-dialog-content] button:has(svg[data-lucide="X"]),
-  [data-radix-dialog-content] [class*="close"],
-  [data-radix-dialog-content] [class*="Close"],
-  [data-radix-dialog-content] button[class*="absolute"][class*="right-"],
-  [data-radix-dialog-content] button[class*="absolute"][class*="top-"],
-  [data-radix-dialog-content] > button:last-child {
+  [data-radix-dialog-content] button,
+  [data-radix-dialog-content] [data-radix-dialog-close] {
     display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
   }
 
-  /* Show print content - must come after hiding rules */
+  /* Show only the print content - same approach as html2pdf */
   [data-print-content] {
     display: block !important;
-    visibility: visible !important;
     position: relative !important;
-    transform: none !important;
-    max-width: 100% !important;
+    width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    box-shadow: none !important;
     background: white !important;
-    opacity: 1 !important;
-  }
-
-  /* Make all children of print content visible */
-  [data-print-content] * {
     visibility: visible !important;
   }
 
-  /* Ensure print content starts at top */
-  [data-print-content] > div {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
+  /* Make all children visible */
+  [data-print-content] * {
+    visibility: visible !important;
   }
 
   /* Preserve table structure */
