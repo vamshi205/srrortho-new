@@ -255,66 +255,139 @@
 
 /* Print styles */
 @media print {
-  /* Hide everything by default */
-  * {
-    visibility: hidden !important;
-  }
-
-  /* Show only print content and its children */
-  [data-print-content],
-  [data-print-content] * {
-    visibility: visible !important;
-  }
-
-  /* Position print content */
-  [data-print-content] {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-  }
-
-  /* Hide all UI elements */
-  body > *:not([data-radix-portal]),
-  [data-radix-dialog-overlay],
-  [data-radix-dialog-content] .no-print,
-  [data-radix-dialog-content] [data-no-print],
-  [data-radix-dialog-content] button[data-radix-dialog-close],
-  [data-radix-dialog-content] [role="button"][aria-label*="Close"],
-  button[aria-label*="Close"],
-  header,
-  nav,
-  aside,
-  footer {
+  /* Hide main app content but keep portal */
+  #root > div:first-child:not([data-radix-portal]) {
     display: none !important;
-    visibility: hidden !important;
   }
 
-  /* Show dialog portal and content */
+  /* Show dialog portal */
   [data-radix-portal] {
     display: block !important;
-    visibility: visible !important;
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    z-index: 9999 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important;
     background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    visibility: visible !important;
   }
 
+  /* Hide dialog overlay */
+  [data-radix-dialog-overlay] {
+    display: none !important;
+  }
+
+  /* Show dialog content */
   [data-radix-dialog-content] {
     display: block !important;
-    visibility: visible !important;
     position: static !important;
     transform: none !important;
     max-width: 100% !important;
+    max-height: none !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
     background: white !important;
     inset: auto !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Hide dialog header and buttons - more aggressive */
+  [data-radix-dialog-content] .no-print,
+  [data-radix-dialog-content] [data-no-print],
+  [data-radix-dialog-content] > header,
+  [data-radix-dialog-content] > div:first-child:not([data-print-content]),
+  [data-radix-dialog-content] button[data-radix-dialog-close],
+  [data-radix-dialog-content] [data-radix-dialog-close],
+  [data-radix-dialog-content] [role="button"][aria-label*="Close"],
+  [data-radix-dialog-content] button[aria-label*="close"],
+  [data-radix-dialog-content] button[aria-label*="Close"],
+  button[aria-label*="Close"],
+  button[aria-label*="close"],
+  [data-radix-dialog-content] svg[data-lucide="x"],
+  [data-radix-dialog-content] svg[data-lucide="X"],
+  [data-radix-dialog-content] button:has(svg[data-lucide="x"]),
+  [data-radix-dialog-content] button:has(svg[data-lucide="X"]),
+  [data-radix-dialog-content] [class*="close"],
+  [data-radix-dialog-content] [class*="Close"],
+  [data-radix-dialog-content] button[class*="absolute"][class*="right-"],
+  [data-radix-dialog-content] button[class*="absolute"][class*="top-"],
+  [data-radix-dialog-content] > button:last-child {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  /* Show print content */
+  [data-print-content] {
+    display: block !important;
+    position: relative !important;
+    transform: none !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: white !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Ensure print content starts at top */
+  [data-print-content] > div {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  /* Ensure all children of print content are visible - preserve original display types */
+  [data-print-content] * {
+    visibility: visible !important;
+  }
+
+  /* Preserve table structure */
+  [data-print-content] table {
+    display: table !important;
+    visibility: visible !important;
+  }
+
+  [data-print-content] thead {
+    display: table-header-group !important;
+    visibility: visible !important;
+  }
+
+  [data-print-content] tbody {
+    display: table-row-group !important;
+    visibility: visible !important;
+  }
+
+  [data-print-content] tr {
+    display: table-row !important;
+    visibility: visible !important;
+  }
+
+  [data-print-content] td,
+  [data-print-content] th {
+    display: table-cell !important;
+    visibility: visible !important;
+  }
+
+  /* Preserve flex and grid layouts */
+  [data-print-content] [class*="flex"],
+  [data-print-content] [class*="grid"] {
+    display: revert !important;
+    visibility: visible !important;
+  }
+
+  /* Ensure signature grid stays on one line */
+  [data-print-content] .grid-cols-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    visibility: visible !important;
   }
 
   body {
@@ -326,16 +399,22 @@
 
   .no-print {
     display: none !important;
-    visibility: hidden !important;
   }
 
   .print-only {
     display: block !important;
-    visibility: visible !important;
   }
 
   @page {
     margin: 0.3cm 0.5cm !important;
+    size: A4;
+  }
+
+  /* Prevent page breaks */
+  [data-print-content] {
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
   }
 
   /* Prevent table rows from breaking across pages */
