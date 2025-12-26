@@ -251,8 +251,8 @@ export default function OrthoApp() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 pt-16 md:pt-4 overflow-x-hidden w-full max-w-full">
-        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 w-full max-w-full">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pt-20 md:pt-6 overflow-x-hidden">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left: Procedure Selection & Active Procedures */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6 min-w-0">
             {/* Active Procedures - Show first if they exist */}
@@ -316,16 +316,13 @@ export default function OrthoApp() {
             )}
           </div>
 
-          {/* Divider - Only show on desktop */}
-          <div className="hidden lg:block border-l border-border"></div>
-
           {/* Right: Summary */}
-          <div className="lg:col-span-1 min-w-0">
+          <div className="lg:col-span-1 min-w-0 lg:border-l lg:border-border lg:pl-6">
             {/* Mobile: Toggleable Summary */}
-            <div className="lg:hidden">
+            <div className="lg:hidden mb-4">
               <button
                 onClick={() => setShowSummaryMobile(!showSummaryMobile)}
-                className="w-full glass-card rounded-xl p-3 flex items-center justify-between mb-4"
+                className="w-full glass-card rounded-xl p-3 flex items-center justify-between"
               >
                 <h2 className="font-display font-semibold text-base">Summary</h2>
                 {showSummaryMobile ? (
@@ -335,7 +332,7 @@ export default function OrthoApp() {
                 )}
               </button>
               {showSummaryMobile && (
-                <div className="glass-card rounded-xl p-3 mb-4">
+                <div className="glass-card rounded-xl p-3 mt-4">
                   <SummaryPanel activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
                 </div>
               )}
@@ -343,7 +340,7 @@ export default function OrthoApp() {
 
             {/* Desktop: Always visible Summary */}
             <div className="hidden lg:block">
-              <div className="glass-card rounded-xl p-3 sm:p-4 sticky top-20">
+              <div className="glass-card rounded-xl p-3 sm:p-4 sticky top-24">
                 <h2 className="font-display font-semibold text-base sm:text-lg mb-3 sm:mb-4">Summary</h2>
                 <SummaryPanel activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
               </div>
@@ -378,7 +375,7 @@ export default function OrthoApp() {
           <div data-print-content>
             <PrintPreview ref={printRef} activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
           </div>
-          <div className="flex gap-3 mt-4 no-print">
+          <div className="flex gap-3 mt-4 no-print" data-no-print>
             <Button onClick={() => window.print()} className="flex-1"><Printer className="w-4 h-4 mr-2" />Print</Button>
             <Button onClick={handleSavePDF} variant="outline" className="flex-1"><Download className="w-4 h-4 mr-2" />Save PDF</Button>
           </div>

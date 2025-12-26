@@ -93,6 +93,17 @@ export function ProcedureCard({
       original: string;
     } | null;
   } | null>(null);
+  const [allInstrumentImages, setAllInstrumentImages] = useState<Array<{
+    name: string;
+    url: string;
+    fallbackUrls?: {
+      thumbnail: string;
+      preview: string;
+      uc: string;
+      original: string;
+    } | null;
+  }>>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [newItem, setNewItem] = useState('');
   const [itemSuggestions, setItemSuggestions] = useState<string[]>([]);
   const [showItemSuggestions, setShowItemSuggestions] = useState(false);
@@ -190,20 +201,44 @@ export function ProcedureCard({
   };
 
   const handleShowInstrumentImage = (instrumentName: string) => {
-    const imageUrl = procedure.instrumentImageMapping?.[instrumentName] || null;
-    
-    if (imageUrl) {
-      // Convert to working URL format
-      const urlOptions = convertGoogleDriveUrl(imageUrl);
-      // Use thumbnail format first (most reliable for Google Drive)
-      const workingUrl = urlOptions ? urlOptions.thumbnail : imageUrl;
+    // Get all instruments with images
+    const instrumentsWithImages = procedure.instruments
+      .filter((inst) => procedure.instrumentImageMapping?.[inst])
+      .map((inst) => {
+        const imageUrl = procedure.instrumentImageMapping?.[inst] || null;
+        const urlOptions = convertGoogleDriveUrl(imageUrl);
+        const workingUrl = urlOptions ? urlOptions.thumbnail : imageUrl;
+        return {
+          name: inst,
+          url: workingUrl,
+          fallbackUrls: urlOptions
+        };
+      });
+
+    if (instrumentsWithImages.length > 0) {
+      setAllInstrumentImages(instrumentsWithImages);
+      const index = instrumentsWithImages.findIndex((img) => img.name === instrumentName);
+      setCurrentImageIndex(index >= 0 ? index : 0);
       
+      const selected = instrumentsWithImages[index >= 0 ? index : 0];
       setSelectedInstrumentImage({
-        name: instrumentName,
-        url: workingUrl,
-        fallbackUrls: urlOptions
+        name: selected.name,
+        url: selected.url,
+        fallbackUrls: selected.fallbackUrls
       });
       setShowImageModal(true);
+    }
+  };
+
+  const handleNavigateImage = (newIndex: number) => {
+    if (allInstrumentImages.length > 0 && newIndex >= 0 && newIndex < allInstrumentImages.length) {
+      setCurrentImageIndex(newIndex);
+      const selected = allInstrumentImages[newIndex];
+      setSelectedInstrumentImage({
+        name: selected.name,
+        url: selected.url,
+        fallbackUrls: selected.fallbackUrls
+      });
     }
   };
 
@@ -270,7 +305,7 @@ export function ProcedureCard({
                   return (
                     <div 
                       key={fixedItem.name} 
-                      className={`item-row flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-200 ${
+                      className={`item-row flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-200 ${
                         isSelected 
                           ? 'bg-primary/5 border-2 border-primary/40 shadow-sm' 
                           : 'bg-muted/30 border-2 border-transparent hover:bg-muted/50 hover:border-border/40'
@@ -283,10 +318,10 @@ export function ProcedureCard({
                         }
                         className="flex-shrink-0"
                       />
-                      <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 truncate`}>
+                      <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 break-words sm:break-normal`}>
                         {fixedItem.name}
                       </span>
-                      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 w-full sm:w-auto justify-end sm:justify-start">
                         <span className="text-xs font-medium text-muted-foreground whitespace-nowrap hidden sm:inline">Qty:</span>
                         <Input
                           type="number"
@@ -329,7 +364,7 @@ export function ProcedureCard({
 
                   return (
                     <div key={item} className="space-y-2">
-                      <div className={`item-row flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-200 ${
+                      <div className={`item-row flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-200 ${
                         isSelected 
                           ? 'bg-primary/5 border-2 border-primary/40 shadow-sm' 
                           : 'bg-muted/30 border-2 border-transparent hover:bg-muted/50 hover:border-border/40'
@@ -355,7 +390,7 @@ export function ProcedureCard({
                           }}
                           className="flex-shrink-0"
                         />
-                        <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 truncate`}>
+                        <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 break-words sm:break-normal`}>
                           {parsed.name}
                         </span>
                         {isSelected && (
@@ -605,10 +640,15 @@ export function ProcedureCard({
           onClose={() => {
             setShowImageModal(false);
             setSelectedInstrumentImage(null);
+            setAllInstrumentImages([]);
+            setCurrentImageIndex(0);
           }}
           instrumentName={selectedInstrumentImage.name}
           imageUrl={selectedInstrumentImage.url}
           fallbackUrls={selectedInstrumentImage.fallbackUrls || null}
+          allInstruments={allInstrumentImages}
+          currentIndex={currentImageIndex}
+          onNavigate={handleNavigateImage}
         />
       )}
     </div>
