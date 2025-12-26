@@ -255,9 +255,29 @@
 
 /* Print styles */
 @media print {
-  /* Hide main app content but keep portal */
-  #root > div:first-child:not([data-radix-portal]) {
+  /* Hide everything by default - more aggressive for mobile */
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  body > *:not([data-radix-portal]) {
     display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Hide main app content but keep portal */
+  #root > div:first-child:not([data-radix-portal]),
+  #root > *:not([data-radix-portal]) {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Hide all elements by default */
+  * {
+    visibility: hidden !important;
   }
 
   /* Show dialog portal */
@@ -273,6 +293,12 @@
     margin: 0 !important;
     padding: 0 !important;
     visibility: visible !important;
+  }
+
+  /* Hide everything in portal except dialog content */
+  [data-radix-portal] > *:not([data-radix-dialog-content]) {
+    display: none !important;
+    visibility: hidden !important;
   }
 
   /* Hide dialog overlay */
@@ -324,9 +350,14 @@
     opacity: 0 !important;
   }
 
+  /* Show print content and make it visible */
+  [data-print-content],
+  [data-print-content] * {
+    visibility: visible !important;
+  }
+
   /* Show print content */
   [data-print-content] {
-    display: block !important;
     position: relative !important;
     transform: none !important;
     max-width: 100% !important;
@@ -334,7 +365,6 @@
     padding: 0 !important;
     box-shadow: none !important;
     background: white !important;
-    visibility: visible !important;
     opacity: 1 !important;
   }
 
@@ -342,11 +372,6 @@
   [data-print-content] > div {
     margin-top: 0 !important;
     padding-top: 0 !important;
-  }
-
-  /* Ensure all children of print content are visible - preserve original display types */
-  [data-print-content] * {
-    visibility: visible !important;
   }
 
   /* Preserve table structure */
