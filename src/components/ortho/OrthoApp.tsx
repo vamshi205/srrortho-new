@@ -71,7 +71,15 @@ export default function OrthoApp() {
   }, []);
 
   const handleRemoveProcedure = useCallback((name: string) => {
-    setActiveProcedures((prev) => prev.filter((p) => p.name !== name));
+    setActiveProcedures((prev) => {
+      const newProcedures = prev.filter((p) => p.name !== name);
+      // Show selector if no procedures left
+      if (newProcedures.length === 0) {
+        setShowProcedureSelector(true);
+        setInitialFilterType('None');
+      }
+      return newProcedures;
+    });
   }, []);
 
   const handleRefreshProcedure = useCallback(async (name: string) => {

@@ -270,7 +270,7 @@ export function ProcedureCard({
                   return (
                     <div 
                       key={fixedItem.name} 
-                      className={`item-row flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
+                      className={`item-row flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-200 ${
                         isSelected 
                           ? 'bg-primary/5 border-2 border-primary/40 shadow-sm' 
                           : 'bg-muted/30 border-2 border-transparent hover:bg-muted/50 hover:border-border/40'
@@ -283,17 +283,17 @@ export function ProcedureCard({
                         }
                         className="flex-shrink-0"
                       />
-                      <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'}`}>
+                      <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 truncate`}>
                         {fixedItem.name}
                       </span>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Qty:</span>
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap hidden sm:inline">Qty:</span>
                         <Input
                           type="number"
                           min="1"
                           value={editedQty}
                           onChange={(e) => onFixedQtyChange(fixedItem.name, e.target.value)}
-                          className={`w-24 h-9 text-center font-semibold border transition-all ${
+                          className={`w-16 sm:w-24 h-8 sm:h-9 text-center font-semibold border transition-all text-xs sm:text-sm ${
                             isSelected 
                               ? 'border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 bg-background' 
                               : 'border-border/60 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-muted/50'
@@ -329,7 +329,7 @@ export function ProcedureCard({
 
                   return (
                     <div key={item} className="space-y-2">
-                      <div className={`item-row flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
+                      <div className={`item-row flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-200 ${
                         isSelected 
                           ? 'bg-primary/5 border-2 border-primary/40 shadow-sm' 
                           : 'bg-muted/30 border-2 border-transparent hover:bg-muted/50 hover:border-border/40'
@@ -355,7 +355,7 @@ export function ProcedureCard({
                           }}
                           className="flex-shrink-0"
                         />
-                        <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'}`}>
+                        <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 truncate`}>
                           {parsed.name}
                         </span>
                         {isSelected && (
@@ -363,18 +363,19 @@ export function ProcedureCard({
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleItemDetails(parsed.name)}
-                            className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                            className="h-6 sm:h-7 text-[10px] sm:text-xs text-muted-foreground hover:text-foreground flex-shrink-0 px-1.5 sm:px-2"
                           >
-                            {showItemDetails ? 'Hide Sizes' : 'Show Sizes'}
+                            <span className="hidden sm:inline">{showItemDetails ? 'Hide Sizes' : 'Show Sizes'}</span>
+                            <span className="sm:hidden">{showItemDetails ? 'Hide' : 'Sizes'}</span>
                           </Button>
                         )}
                       </div>
 
                       {/* Size/Qty Editor */}
                       {isSelected && showItemDetails && (
-                        <div className="ml-8 space-y-2 pt-2">
+                        <div className="ml-6 sm:ml-8 space-y-2 pt-2">
                           {sizeQty.map((sq, index) => (
-                            <div key={index} className="flex items-center gap-2">
+                            <div key={index} className="flex items-center gap-1.5 sm:gap-2">
                               <Input
                                 placeholder="Size (e.g., 6mm)"
                                 value={sq.size}
@@ -383,7 +384,7 @@ export function ProcedureCard({
                                   updated[index] = { ...sq, size: e.target.value };
                                   onSizeQtyChange(parsed.name, updated);
                                 }}
-                                className="flex-1 h-9 text-sm border border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 bg-background"
+                                className="flex-1 h-8 sm:h-9 text-xs sm:text-sm border border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 bg-background"
                               />
                               <Input
                                 type="number"
@@ -395,7 +396,7 @@ export function ProcedureCard({
                                   updated[index] = { ...sq, qty: e.target.value };
                                   onSizeQtyChange(parsed.name, updated);
                                 }}
-                                className="w-24 h-9 text-sm text-center font-semibold border border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 bg-background"
+                                className="w-16 sm:w-24 h-8 sm:h-9 text-xs sm:text-sm text-center font-semibold border border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 bg-background"
                               />
                               {sizeQty.length > 1 && (
                                 <Button
