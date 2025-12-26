@@ -100,13 +100,8 @@ export function InstrumentImageModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>{instrumentName}</span>
-            {allInstruments.length > 1 && (
-              <span className="text-sm text-muted-foreground font-normal">
-                {currentIndex + 1} / {allInstruments.length}
-              </span>
-            )}
+          <DialogTitle>
+            {instrumentName}
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center justify-center min-h-[200px] p-4 relative">
@@ -162,46 +157,54 @@ export function InstrumentImageModal({
           </div>
 
           {/* Control Buttons */}
-          <div className="flex items-center gap-2 mt-4 flex-wrap justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRotate}
-              className="flex items-center gap-2"
-            >
-              <RotateCw className="w-4 h-4" />
-              <span className="hidden sm:inline">Rotate</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleZoomIn}
-              disabled={zoom >= 3}
-              className="flex items-center gap-2"
-            >
-              <ZoomIn className="w-4 h-4" />
-              <span className="hidden sm:inline">Zoom In</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleZoomOut}
-              disabled={zoom <= 0.5}
-              className="flex items-center gap-2"
-            >
-              <ZoomOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Zoom Out</span>
-            </Button>
-            {fallbackUrls?.original && (
+          <div className="flex flex-col items-center gap-3 mt-4">
+            <div className="flex items-center gap-2 flex-wrap justify-center">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleOpenInNewTab}
+                onClick={handleRotate}
                 className="flex items-center gap-2"
               >
-                <ExternalLink className="w-4 h-4" />
-                <span className="hidden sm:inline">Open in New Tab</span>
+                <RotateCw className="w-4 h-4" />
+                <span className="hidden sm:inline">Rotate</span>
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleZoomIn}
+                disabled={zoom >= 3}
+                className="flex items-center gap-2"
+              >
+                <ZoomIn className="w-4 h-4" />
+                <span className="hidden sm:inline">Zoom In</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleZoomOut}
+                disabled={zoom <= 0.5}
+                className="flex items-center gap-2"
+              >
+                <ZoomOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Zoom Out</span>
+              </Button>
+              {fallbackUrls?.original && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenInNewTab}
+                  className="flex items-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span className="hidden sm:inline">Open in New Tab</span>
+                </Button>
+              )}
+            </div>
+            {/* Image Counter at Bottom */}
+            {allInstruments.length > 1 && (
+              <div className="text-sm text-muted-foreground">
+                {currentIndex + 1} / {allInstruments.length}
+              </div>
             )}
           </div>
         </div>

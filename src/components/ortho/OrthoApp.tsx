@@ -198,6 +198,24 @@ export default function OrthoApp() {
     await html2pdf().set(opt).from(printRef.current).save();
   };
 
+  const handlePrintPDF = async () => {
+    if (!printRef.current) return;
+    const opt = {
+      margin: 10,
+      image: { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+    };
+    const pdf = await html2pdf().set(opt).from(printRef.current).outputPdf('blob');
+    const blobUrl = URL.createObjectURL(pdf);
+    const printWindow = window.open(blobUrl);
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+  };
+
   const handleClearAll = () => {
     setActiveProcedures([]);
     setHospitalName('');
@@ -376,7 +394,7 @@ export default function OrthoApp() {
             <PrintPreview ref={printRef} activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
           </div>
           <div className="flex gap-3 mt-4 no-print" data-no-print>
-            <Button onClick={() => window.print()} className="flex-1"><Printer className="w-4 h-4 mr-2" />Print</Button>
+            <Button onClick={handlePrintPDF} className="flex-1"><Printer className="w-4 h-4 mr-2" />Print</Button>
             <Button onClick={handleSavePDF} variant="outline" className="flex-1"><Download className="w-4 h-4 mr-2" />Save PDF</Button>
           </div>
         </DialogContent>
