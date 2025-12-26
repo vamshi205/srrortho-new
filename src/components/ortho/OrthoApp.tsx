@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import html2pdf from 'html2pdf.js';
-import { Activity, Printer, Download, Trash2, X, Settings2, Plus } from 'lucide-react';
+import { Activity, Printer, Download, Trash2, X, Settings2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,8 @@ export default function OrthoApp() {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showProcedureSelector, setShowProcedureSelector] = useState(false);
+  const [initialFilterType, setInitialFilterType] = useState<string>('None');
+  const [showSummaryMobile, setShowSummaryMobile] = useState(false);
 
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -35,10 +37,12 @@ export default function OrthoApp() {
     setActiveProcedures([]);
   }, []);
 
-  // Clear procedures when user logs in
+  // Clear procedures and show selector with "None" filter when user logs in
   useEffect(() => {
     if (isAuthenticated) {
       setActiveProcedures([]);
+      setShowProcedureSelector(true);
+      setInitialFilterType('None');
     }
   }, [isAuthenticated]);
 
@@ -200,7 +204,7 @@ export default function OrthoApp() {
   return (
     <div className="min-h-screen bg-gradient-hero overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-md border-b border-border">
+      <header className="fixed md:sticky top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
         <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink-0">
@@ -239,40 +243,11 @@ export default function OrthoApp() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
-        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 pt-16 md:pt-4 overflow-x-hidden w-full max-w-full">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 w-full max-w-full">
           {/* Left: Procedure Selection & Active Procedures */}
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            {/* Procedure Selector - Show full selector or compact button */}
-            {showProcedureSelector ? (
-              <div className="glass-card rounded-xl p-2.5 sm:p-4">
-                <h2 className="font-display font-semibold text-base sm:text-lg mb-2 sm:mb-4">Select Procedures</h2>
-                {loading ? (
-                  <div className="py-12 text-center text-muted-foreground">Loading procedures...</div>
-                ) : (
-                  <ProcedureSelector
-                    procedures={procedures}
-                    procedureTypes={procedureTypes}
-                    activeProcedureNames={activeProcedures.map((p) => p.name)}
-                    onSelectProcedure={handleSelectProcedure}
-                    searchProcedures={searchProcedures}
-                    initialFilterType="All"
-                  />
-                )}
-              </div>
-            ) : (
-              <div className="glass-card rounded-xl p-2.5 sm:p-4 flex items-center justify-center">
-                <Button
-                  onClick={() => setShowProcedureSelector(true)}
-                  className="btn-gradient w-full sm:w-auto"
-                  size="lg"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New Procedure
-                </Button>
-              </div>
-            )}
-
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6 min-w-0">
+            {/* Active Procedures - Show first if they exist */}
             {activeProcedures.length > 0 && (
               <div className="space-y-3 sm:space-y-4">
                 <h2 className="font-display font-semibold text-base sm:text-lg">Active Procedures</h2>
@@ -298,13 +273,72 @@ export default function OrthoApp() {
                 ))}
               </div>
             )}
+
+            {/* Procedure Selector - Show full selector or compact button */}
+            {showProcedureSelector ? (
+              <div className="glass-card rounded-xl p-2.5 sm:p-4 min-w-0">
+                <h2 className="font-display font-semibold text-base sm:text-lg mb-2 sm:mb-4">Select Procedures</h2>
+                {loading ? (
+                  <div className="py-12 text-center text-muted-foreground">Loading procedures...</div>
+                ) : (
+                  <ProcedureSelector
+                    procedures={procedures}
+                    procedureTypes={procedureTypes}
+                    activeProcedureNames={activeProcedures.map((p) => p.name)}
+                    onSelectProcedure={handleSelectProcedure}
+                    searchProcedures={searchProcedures}
+                    initialFilterType={initialFilterType}
+                  />
+                )}
+              </div>
+            ) : activeProcedures.length > 0 && (
+              <div className="glass-card rounded-xl p-2.5 sm:p-4 flex items-center justify-center min-w-0">
+                <Button
+                  onClick={() => {
+                    setInitialFilterType('All');
+                    setShowProcedureSelector(true);
+                  }}
+                  className="btn-gradient w-full sm:w-auto"
+                  size="lg"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add New Procedure
+                </Button>
+              </div>
+            )}
           </div>
 
+          {/* Divider - Only show on desktop */}
+          <div className="hidden lg:block border-l border-border"></div>
+
           {/* Right: Summary */}
-          <div className="lg:col-span-1">
-            <div className="glass-card rounded-xl p-3 sm:p-4 sticky top-16 sm:top-20">
-              <h2 className="font-display font-semibold text-base sm:text-lg mb-3 sm:mb-4">Summary</h2>
-              <SummaryPanel activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
+          <div className="lg:col-span-1 min-w-0">
+            {/* Mobile: Toggleable Summary */}
+            <div className="lg:hidden">
+              <button
+                onClick={() => setShowSummaryMobile(!showSummaryMobile)}
+                className="w-full glass-card rounded-xl p-3 flex items-center justify-between mb-4"
+              >
+                <h2 className="font-display font-semibold text-base">Summary</h2>
+                {showSummaryMobile ? (
+                  <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                )}
+              </button>
+              {showSummaryMobile && (
+                <div className="glass-card rounded-xl p-3 mb-4">
+                  <SummaryPanel activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
+                </div>
+              )}
+            </div>
+
+            {/* Desktop: Always visible Summary */}
+            <div className="hidden lg:block">
+              <div className="glass-card rounded-xl p-3 sm:p-4 sticky top-20">
+                <h2 className="font-display font-semibold text-base sm:text-lg mb-3 sm:mb-4">Summary</h2>
+                <SummaryPanel activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
+              </div>
             </div>
           </div>
         </div>
@@ -317,7 +351,12 @@ export default function OrthoApp() {
           <div className="space-y-4 pt-4">
             <div><Label>Hospital Name</Label><Input value={hospitalName} onChange={(e) => setHospitalName(e.target.value)} placeholder="Enter hospital name" className="mt-1" /></div>
             <div><Label>DC Number</Label><Input value={dcNo} onChange={(e) => setDcNo(e.target.value)} placeholder="Enter DC number" className="mt-1" /></div>
-            <Button onClick={() => setShowSettingsModal(false)} className="w-full">Save</Button>
+            <Button onClick={() => {
+              if (hospitalName && dcNo) {
+                setShowSettingsModal(false);
+                setShowPrintModal(true);
+              }
+            }} className="w-full">Save & Continue</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -325,11 +364,13 @@ export default function OrthoApp() {
       {/* Print Modal */}
       <Dialog open={showPrintModal} onOpenChange={setShowPrintModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">Print Preview<Button variant="ghost" size="icon" onClick={() => setShowPrintModal(false)}><X className="w-4 h-4" /></Button></DialogTitle>
+          <DialogHeader className="no-print">
+            <DialogTitle>Print Preview</DialogTitle>
           </DialogHeader>
-          <PrintPreview ref={printRef} activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
-          <div className="flex gap-3 mt-4">
+          <div data-print-content>
+            <PrintPreview ref={printRef} activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
+          </div>
+          <div className="flex gap-3 mt-4 no-print">
             <Button onClick={() => window.print()} className="flex-1"><Printer className="w-4 h-4 mr-2" />Print</Button>
             <Button onClick={handleSavePDF} variant="outline" className="flex-1"><Download className="w-4 h-4 mr-2" />Save PDF</Button>
           </div>

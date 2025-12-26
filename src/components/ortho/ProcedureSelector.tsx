@@ -41,26 +41,26 @@ export function ProcedureSelector({
   const maxHeight = hasActiveProcedures ? 'max-h-[200px] sm:max-h-[250px]' : 'max-h-[400px] sm:max-h-none';
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-3 sm:space-y-4 w-full min-w-0">
       {/* Search & Filter Header */}
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full min-w-0">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
           <Input
             placeholder="Search procedures..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 sm:pl-10 h-9 sm:h-11 text-sm sm:text-base input-modern"
+            className="pl-8 sm:pl-10 h-9 sm:h-11 text-sm sm:text-base input-modern w-full"
           />
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0" />
-          <div className="flex flex-wrap gap-1.5 sm:gap-2 overflow-x-auto pb-1 -mb-1">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 overflow-x-auto pb-1 -mb-1 min-w-0">
             {procedureTypes.map((type) => (
               <button
                 key={type}
                 onClick={() => setSelectedType(type)}
-                className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                   selectedType === type
                     ? 'bg-primary text-primary-foreground shadow-md'
                     : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -74,15 +74,15 @@ export function ProcedureSelector({
       </div>
 
       {/* Procedures Grid - Scrollable on Mobile, Reduced height on mobile when procedures are selected */}
-      <div className={`${maxHeight} overflow-y-auto sm:overflow-visible transition-all duration-300 -mx-1 px-1 sm:mx-0 sm:px-0`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+      <div className={`${maxHeight} overflow-y-auto sm:overflow-visible transition-all duration-300 w-full min-w-0`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 w-full min-w-0">
           {filteredProcedures.map((procedure, index) => {
             const isActive = activeProcedureNames.includes(procedure.name);
             return (
               <button
                 key={procedure.name}
                 onClick={() => onSelectProcedure(procedure)}
-                className={`procedure-card text-left group ${isActive ? 'active' : ''} p-2.5 sm:p-4`}
+                className={`procedure-card text-left group ${isActive ? 'active' : ''} p-2.5 sm:p-4 w-full min-w-0`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <div className="flex items-start justify-between gap-1.5 sm:gap-2">

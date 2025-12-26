@@ -80,17 +80,23 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
     return (
       <div
         ref={ref}
-        className="bg-white text-black p-8 min-h-[297mm] w-full max-w-[210mm] mx-auto"
-        style={{ fontFamily: 'Arial, sans-serif' }}
+        className="bg-white text-black w-full max-w-[210mm]"
+        style={{ 
+          fontFamily: 'Arial, sans-serif',
+          pageBreakInside: 'avoid',
+          pageBreakAfter: 'auto',
+          margin: '0 auto',
+          padding: '0.2cm 1cm 0.5cm 1cm'
+        }}
       >
         {/* Header */}
-        <div className="text-center mb-6 border-b-2 border-black pb-4">
-          <h1 className="text-2xl font-bold mb-1">SRR ORTHO IMPLANTS</h1>
-          <p className="text-sm">Orthopedic Implant Delivery Challan</p>
+        <div className="text-center mb-3 border-b-2 border-black pb-2" style={{ pageBreakInside: 'avoid', marginTop: 0, paddingTop: 0 }}>
+          <h1 className="text-xl font-bold mb-1">SRR ORTHO IMPLANTS</h1>
+          <p className="text-xs">Orthopedic Implant Delivery Challan</p>
         </div>
 
         {/* Info Section */}
-        <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+        <div className="grid grid-cols-2 gap-3 mb-4 text-xs" style={{ pageBreakInside: 'avoid' }}>
           <div>
             <p>
               <strong>Hospital:</strong> {hospitalName || '___________________'}
@@ -111,22 +117,22 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
         </div>
 
         {/* Items Table */}
-        <table className="w-full border-collapse text-sm mb-6">
-          <thead>
+        <table className="w-full border-collapse text-xs mb-4" style={{ pageBreakInside: 'auto' }}>
+          <thead style={{ display: 'table-header-group' }}>
             <tr className="bg-gray-100">
-              <th className="border border-black p-2 text-left w-12">S.No</th>
-              <th className="border border-black p-2 text-left">Item Description</th>
-              <th className="border border-black p-2 text-left w-32">Size/Details</th>
-              <th className="border border-black p-2 text-center w-16">Qty</th>
+              <th className="border border-black p-1.5 text-left w-10" style={{ pageBreakInside: 'avoid' }}>S.No</th>
+              <th className="border border-black p-1.5 text-left" style={{ pageBreakInside: 'avoid' }}>Item Description</th>
+              <th className="border border-black p-1.5 text-left w-28" style={{ pageBreakInside: 'avoid' }}>Size/Details</th>
+              <th className="border border-black p-1.5 text-center w-12" style={{ pageBreakInside: 'avoid' }}>Qty</th>
             </tr>
           </thead>
           <tbody>
             {printItems.map((item, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                <td className="border border-black p-2 text-center">{index + 1}</td>
-                <td className="border border-black p-2">{item.name}</td>
-                <td className="border border-black p-2">{item.description}</td>
-                <td className="border border-black p-2 text-center font-semibold">
+              <tr key={index} style={{ pageBreakInside: 'avoid' }}>
+                <td className="border border-black p-1.5 text-center">{index + 1}</td>
+                <td className="border border-black p-1.5">{item.name}</td>
+                <td className="border border-black p-1.5">{item.description}</td>
+                <td className="border border-black p-1.5 text-center font-semibold">
                   {item.qty}
                 </td>
               </tr>
@@ -143,31 +149,31 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
 
         {/* Instruments */}
         {allInstruments.length > 0 && (
-          <div className="mb-6">
-            <h3 className="font-bold mb-2 text-sm">Instruments Required:</h3>
-            <p className="text-sm">{allInstruments.join(', ')}</p>
+          <div className="mb-4" style={{ pageBreakInside: 'avoid' }}>
+            <h3 className="font-bold mb-1 text-xs">Instruments Required:</h3>
+            <p className="text-xs">{allInstruments.join(', ')}</p>
           </div>
         )}
 
         {/* Signatures */}
-        <div className="grid grid-cols-2 gap-8 mt-12 pt-4">
+        <div className="grid grid-cols-2 gap-6 mt-6 pt-2" style={{ pageBreakInside: 'avoid' }}>
           <div className="text-center">
-            <div className="border-t border-black pt-2 mt-16">
-              <p className="text-sm font-semibold">Receiver's Signature</p>
-              <p className="text-xs text-gray-600">Name & Date</p>
+            <div className="border-t border-black pt-2 mt-12">
+              <p className="text-xs font-semibold">Receiver's Signature</p>
+              <p className="text-[10px] text-gray-600">Name & Date</p>
             </div>
           </div>
           <div className="text-center">
-            <div className="border-t border-black pt-2 mt-16">
-              <p className="text-sm font-semibold">Authorized Signature</p>
-              <p className="text-xs text-gray-600">SRR Ortho Implants</p>
+            <div className="border-t border-black pt-2 mt-12">
+              <p className="text-xs font-semibold">Authorized Signature</p>
+              <p className="text-[10px] text-gray-600">SRR Ortho Implants</p>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="absolute bottom-8 left-8 right-8 text-center text-xs text-gray-500 border-t pt-4">
-          <p>This is a system-generated delivery challan</p>
+        {/* Footer - System Generated Notice */}
+        <div className="mt-4 pt-2 text-center text-[10px] text-gray-500" style={{ pageBreakInside: 'avoid' }}>
+          <p>This is a system-generated delivery challan.</p>
         </div>
       </div>
     );
