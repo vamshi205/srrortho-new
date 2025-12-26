@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import html2pdf from 'html2pdf.js';
-import { Activity, Printer, Download, Trash2, X, Settings2 } from 'lucide-react';
+import { Activity, Printer, Download, Trash2, X, Settings2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +26,7 @@ export default function OrthoApp() {
   const [dcNo, setDcNo] = useState('');
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showProcedureSelector, setShowProcedureSelector] = useState(true);
 
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +46,12 @@ export default function OrthoApp() {
     setActiveProcedures((prev) => {
       const exists = prev.find((p) => p.name === procedure.name);
       if (exists) {
-        return prev.filter((p) => p.name !== procedure.name);
+        const newProcedures = prev.filter((p) => p.name !== procedure.name);
+        // Show selector if no procedures left
+        if (newProcedures.length === 0) {
+          setShowProcedureSelector(true);
+        }
+        return newProcedures;
       }
       const activeProcedure: ActiveProcedure = {
         ...procedure,
@@ -54,6 +60,8 @@ export default function OrthoApp() {
         fixedQtyEdits: new Map(),
         instrumentImageMapping: procedure.instrumentImageMapping || {},
       };
+      // Hide selector when a procedure is selected
+      setShowProcedureSelector(false);
       return [...prev, activeProcedure];
     });
   }, []);
@@ -182,6 +190,7 @@ export default function OrthoApp() {
     setActiveProcedures([]);
     setHospitalName('');
     setDcNo('');
+    setShowProcedureSelector(true);
   };
 
   if (!isAuthenticated) {
@@ -234,20 +243,34 @@ export default function OrthoApp() {
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left: Procedure Selection & Active Procedures */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            <div className="glass-card rounded-xl p-2.5 sm:p-4">
-              <h2 className="font-display font-semibold text-base sm:text-lg mb-2 sm:mb-4">Select Procedures</h2>
-              {loading ? (
-                <div className="py-12 text-center text-muted-foreground">Loading procedures...</div>
-              ) : (
-                <ProcedureSelector
-                  procedures={procedures}
-                  procedureTypes={procedureTypes}
-                  activeProcedureNames={activeProcedures.map((p) => p.name)}
-                  onSelectProcedure={handleSelectProcedure}
-                  searchProcedures={searchProcedures}
-                />
-              )}
-            </div>
+            {/* Procedure Selector - Show full selector or compact button */}
+            {showProcedureSelector ? (
+              <div className="glass-card rounded-xl p-2.5 sm:p-4">
+                <h2 className="font-display font-semibold text-base sm:text-lg mb-2 sm:mb-4">Select Procedures</h2>
+                {loading ? (
+                  <div className="py-12 text-center text-muted-foreground">Loading procedures...</div>
+                ) : (
+                  <ProcedureSelector
+                    procedures={procedures}
+                    procedureTypes={procedureTypes}
+                    activeProcedureNames={activeProcedures.map((p) => p.name)}
+                    onSelectProcedure={handleSelectProcedure}
+                    searchProcedures={searchProcedures}
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="glass-card rounded-xl p-2.5 sm:p-4">
+                <Button
+                  onClick={() => setShowProcedureSelector(true)}
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Another Procedure
+                </Button>
+              </div>
+            )}
 
             {activeProcedures.length > 0 && (
               <div className="space-y-3 sm:space-y-4">
