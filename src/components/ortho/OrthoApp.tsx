@@ -26,7 +26,7 @@ export default function OrthoApp() {
   const [dcNo, setDcNo] = useState('');
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showProcedureSelector, setShowProcedureSelector] = useState(true);
+  const [showProcedureSelector, setShowProcedureSelector] = useState(false);
 
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -256,18 +256,19 @@ export default function OrthoApp() {
                     activeProcedureNames={activeProcedures.map((p) => p.name)}
                     onSelectProcedure={handleSelectProcedure}
                     searchProcedures={searchProcedures}
+                    initialFilterType="All"
                   />
                 )}
               </div>
             ) : (
-              <div className="glass-card rounded-xl p-2.5 sm:p-4">
+              <div className="glass-card rounded-xl p-2.5 sm:p-4 flex items-center justify-center">
                 <Button
                   onClick={() => setShowProcedureSelector(true)}
-                  variant="outline"
-                  className="w-full sm:w-auto"
+                  className="btn-gradient w-full sm:w-auto"
+                  size="lg"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Another Procedure
+                  Add New Procedure
                 </Button>
               </div>
             )}

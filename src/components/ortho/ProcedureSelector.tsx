@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, Plus, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ interface ProcedureSelectorProps {
   activeProcedureNames: string[];
   onSelectProcedure: (procedure: Procedure) => void;
   searchProcedures: (query: string, type?: string) => Procedure[];
+  initialFilterType?: string;
 }
 
 export function ProcedureSelector({
@@ -19,9 +20,17 @@ export function ProcedureSelector({
   activeProcedureNames,
   onSelectProcedure,
   searchProcedures,
+  initialFilterType,
 }: ProcedureSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState('None');
+  const [selectedType, setSelectedType] = useState(initialFilterType || 'None');
+
+  // Reset filter when initialFilterType changes
+  useEffect(() => {
+    if (initialFilterType) {
+      setSelectedType(initialFilterType);
+    }
+  }, [initialFilterType]);
 
   const filteredProcedures = useMemo(() => {
     return searchProcedures(searchQuery, selectedType);
