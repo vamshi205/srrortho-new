@@ -14,6 +14,7 @@ export function useProcedures() {
   const procedureFuse = useRef<Fuse<Procedure> | null>(null);
   const itemFuse = useRef<Fuse<string> | null>(null);
   const instrumentFuse = useRef<Fuse<string> | null>(null);
+  const instrumentMapRef = useRef<Map<string, string>>(new Map());
 
   // Image mapping - fallback if not in Google Sheets
   const instrumentImageMap: Record<string, string> = {
@@ -119,8 +120,22 @@ export function useProcedures() {
     const allItems = parsed.flatMap((p) => p.items);
     itemFuse.current = new Fuse([...new Set(allItems)], { threshold: 0.4 });
 
-    const allInstruments = parsed.flatMap((p) => p.instruments);
-    instrumentFuse.current = new Fuse([...new Set(allInstruments)], { threshold: 0.4 });
+    // Create instrument mapping with procedure names
+    const instrumentMap = new Map<string, string>();
+    parsed.forEach((p) => {
+      p.instruments.forEach((inst) => {
+        // If instrument appears in multiple procedures, keep the first one found
+        if (!instrumentMap.has(inst)) {
+          instrumentMap.set(inst, p.name);
+        }
+      });
+    });
+    
+    // Store instrument map in ref for search results
+    instrumentMapRef.current = instrumentMap;
+    
+    const allInstruments = Array.from(instrumentMap.keys());
+    instrumentFuse.current = new Fuse(allInstruments, { threshold: 0.4 });
 
     setLoading(false);
   }, []);
@@ -222,9 +237,12 @@ export function useProcedures() {
     return itemFuse.current.search(query).map((r) => r.item);
   }, []);
 
-  const searchInstruments = useCallback((query: string): string[] => {
+  const searchInstruments = useCallback((query: string): Array<{ instrument: string; procedureName: string }> => {
     if (!query || !instrumentFuse.current) return [];
-    return instrumentFuse.current.search(query).map((r) => r.item);
+    return instrumentFuse.current.search(query).map((r) => ({
+      instrument: r.item,
+      procedureName: instrumentMapRef.current.get(r.item) || 'Unknown'
+    }));
   }, []);
 
   useEffect(() => {

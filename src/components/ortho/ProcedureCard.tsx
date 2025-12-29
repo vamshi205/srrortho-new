@@ -33,7 +33,7 @@ interface ProcedureCardProps {
   onAddItem: (itemName: string) => void;
   onSearchItems: (query: string) => string[];
   instrumentSuggestions: string[];
-  onSearchInstruments: (query: string) => string[];
+  onSearchInstruments: (query: string) => Array<{ instrument: string; procedureName: string }>;
 }
 
 function parseSizeQtyFromItem(item: string): { name: string; sizeQty: SizeQty[] } {
@@ -69,7 +69,7 @@ export function ProcedureCard({
 }: ProcedureCardProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [newInstrument, setNewInstrument] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<Array<{ instrument: string; procedureName: string }>>([]);
   const [showDetails, setShowDetails] = useState<Set<string>>(new Set());
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{
@@ -787,14 +787,15 @@ export function ProcedureCard({
           }}
           className="mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
         >
-          {suggestions.map((suggestion) => (
+          {suggestions.map((suggestion, index) => (
             <button
-              key={suggestion}
+              key={`${suggestion.instrument}-${index}`}
               className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
-              onClick={() => handleAddInstrument(suggestion)}
+              onClick={() => handleAddInstrument(suggestion.instrument)}
               onMouseDown={(e) => e.preventDefault()}
             >
-              {suggestion}
+              <span className="font-medium">{suggestion.instrument}</span>
+              <span className="text-primary/70 text-xs ml-1.5">({suggestion.procedureName})</span>
             </button>
           ))}
         </div>,
