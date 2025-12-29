@@ -449,18 +449,20 @@ export function ProcedureCard({
                         }
                         className="flex-shrink-0"
                       />
-                      <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 break-words sm:break-normal`}>
-                        {fixedItem.name}
-                      </span>
-                      {procedure.fixedItemImageMapping?.[fixedItem.name] && (
-                        <button
-                          onClick={() => handleShowFixedItemImage(fixedItem.name)}
-                          className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors text-primary flex-shrink-0"
-                          title={`View image of ${fixedItem.name}`}
-                        >
-                          <Info className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                      <div className="flex-1 flex items-center gap-1.5 min-w-0">
+                        <span className={`text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 break-words sm:break-normal`}>
+                          {fixedItem.name}
+                        </span>
+                        {procedure.fixedItemImageMapping?.[fixedItem.name] && (
+                          <button
+                            onClick={() => handleShowFixedItemImage(fixedItem.name)}
+                            className="hover:bg-primary/20 rounded-full p-0.5 transition-colors text-primary flex-shrink-0"
+                            title={`View image of ${fixedItem.name}`}
+                          >
+                            <Info className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 w-full sm:w-auto justify-end sm:justify-start">
                         <span className="text-xs font-medium text-muted-foreground whitespace-nowrap hidden sm:inline">Qty:</span>
                         <Input

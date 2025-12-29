@@ -95,7 +95,10 @@ export function ProcedureSelector({
                         {procedure.type}
                       </Badge>
                       <span className="text-[10px] sm:text-xs text-muted-foreground">
-                        {procedure.items.length} items
+                        {procedure.items.length + (procedure.fixedItems?.length || 0)} items
+                      </span>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground">
+                        {procedure.instruments.length} instruments
                       </span>
                     </div>
                   </div>
