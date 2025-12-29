@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ChevronDown,
   ChevronUp,
@@ -70,18 +71,6 @@ export function ProcedureCard({
   const [newInstrument, setNewInstrument] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showDetails, setShowDetails] = useState<Set<string>>(new Set());
-  
-  // Auto-show details when item is selected
-  useEffect(() => {
-    const selectedItemNames = Array.from(procedure.selectedItems.keys());
-    setShowDetails((prev) => {
-      const next = new Set(prev);
-      selectedItemNames.forEach((name) => {
-        next.add(name);
-      });
-      return next;
-    });
-  }, [procedure.selectedItems]);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{
     name: string;
@@ -107,6 +96,104 @@ export function ProcedureCard({
   const [newItem, setNewItem] = useState('');
   const [itemSuggestions, setItemSuggestions] = useState<string[]>([]);
   const [showItemSuggestions, setShowItemSuggestions] = useState(false);
+  const instrumentInputRef = useRef<HTMLDivElement>(null);
+  const itemInputRef = useRef<HTMLDivElement>(null);
+  const [instrumentDropdownPos, setInstrumentDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [itemDropdownPos, setItemDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  
+  // Auto-show details when item is selected
+  useEffect(() => {
+    const selectedItemNames = Array.from(procedure.selectedItems.keys());
+    setShowDetails((prev) => {
+      const next = new Set(prev);
+      selectedItemNames.forEach((name) => {
+        next.add(name);
+      });
+      return next;
+    });
+  }, [procedure.selectedItems]);
+
+  // Update dropdown positions on scroll/resize
+  useEffect(() => {
+    const updatePositions = () => {
+      if (suggestions.length > 0 && instrumentInputRef.current) {
+        try {
+          const rect = instrumentInputRef.current.getBoundingClientRect();
+          setInstrumentDropdownPos({
+            top: rect.bottom + window.scrollY + 4,
+            left: rect.left + window.scrollX,
+            width: rect.width,
+          });
+        } catch (e) {
+          // Silently fail if ref is not ready
+        }
+      }
+      if (showItemSuggestions && itemSuggestions.length > 0 && itemInputRef.current) {
+        try {
+          const rect = itemInputRef.current.getBoundingClientRect();
+          setItemDropdownPos({
+            top: rect.bottom + window.scrollY + 4,
+            left: rect.left + window.scrollX,
+            width: rect.width,
+          });
+        } catch (e) {
+          // Silently fail if ref is not ready
+        }
+      }
+    };
+
+    if (suggestions.length > 0 || showItemSuggestions) {
+      // Use setTimeout to ensure refs are ready
+      const timeoutId = setTimeout(() => {
+        updatePositions();
+      }, 0);
+      
+      window.addEventListener('scroll', updatePositions, true);
+      window.addEventListener('resize', updatePositions);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener('scroll', updatePositions, true);
+        window.removeEventListener('resize', updatePositions);
+      };
+    }
+  }, [suggestions.length, showItemSuggestions, itemSuggestions.length]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    
+    const handleClickOutside = (event: MouseEvent) => {
+      try {
+        const target = event.target as Node;
+        if (suggestions.length > 0 && instrumentInputRef.current && !instrumentInputRef.current.contains(target)) {
+          // Check if click is on portal dropdown
+          const portalDropdown = document.querySelector('[data-instrument-dropdown]');
+          if (!portalDropdown?.contains(target)) {
+            setSuggestions([]);
+            setInstrumentDropdownPos(null);
+          }
+        }
+        if (showItemSuggestions && itemInputRef.current && !itemInputRef.current.contains(target)) {
+          // Check if click is on portal dropdown
+          const portalDropdown = document.querySelector('[data-item-dropdown]');
+          if (!portalDropdown?.contains(target)) {
+            setShowItemSuggestions(false);
+            setItemDropdownPos(null);
+          }
+        }
+      } catch (e) {
+        // Silently fail if there's an error
+      }
+    };
+
+    if (suggestions.length > 0 || showItemSuggestions) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [suggestions.length, showItemSuggestions]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -118,8 +205,18 @@ export function ProcedureCard({
     setNewInstrument(value);
     if (value.length >= 2) {
       setSuggestions(onSearchInstruments(value).slice(0, 5));
+      // Calculate position for portal
+      if (instrumentInputRef.current) {
+        const rect = instrumentInputRef.current.getBoundingClientRect();
+        setInstrumentDropdownPos({
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+        });
+      }
     } else {
       setSuggestions([]);
+      setInstrumentDropdownPos(null);
     }
   };
 
@@ -129,6 +226,7 @@ export function ProcedureCard({
     }
     setNewInstrument('');
     setSuggestions([]);
+    setInstrumentDropdownPos(null);
   };
 
   const handleItemInput = (value: string) => {
@@ -137,9 +235,19 @@ export function ProcedureCard({
       const results = onSearchItems(value);
       setItemSuggestions(results.slice(0, 5));
       setShowItemSuggestions(results.length > 0);
+      // Calculate position for portal
+      if (itemInputRef.current) {
+        const rect = itemInputRef.current.getBoundingClientRect();
+        setItemDropdownPos({
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+        });
+      }
     } else {
       setItemSuggestions([]);
       setShowItemSuggestions(false);
+      setItemDropdownPos(null);
     }
   };
 
@@ -150,6 +258,7 @@ export function ProcedureCard({
       setNewItem('');
       setItemSuggestions([]);
       setShowItemSuggestions(false);
+      setItemDropdownPos(null);
     }
   };
 
@@ -307,7 +416,7 @@ export function ProcedureCard({
 
       {/* Content */}
       {!isCollapsed && (
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-6 overflow-visible">
           {/* Fixed Items */}
           {procedure.fixedItems.length > 0 && (
             <div className="space-y-4">
@@ -518,9 +627,9 @@ export function ProcedureCard({
             )}
 
             {/* Add new item input */}
-            <div className="relative pl-6 border-l-4 border-blue-600/60 pt-3 pb-2 border-2 border-blue-600/40 rounded-lg bg-blue-50/30 p-4">
+            <div className="relative pl-6 border-l-4 border-blue-600/60 pt-3 pb-2 border-2 border-blue-600/40 rounded-lg bg-blue-50/30 p-4 overflow-visible">
               <label className="text-xs font-semibold text-blue-900 mb-2 block">Add New Item</label>
-              <div className="flex gap-2">
+              <div ref={itemInputRef} className="flex gap-2 relative">
                 <Input
                   placeholder="Type item name..."
                   value={newItem}
@@ -535,7 +644,10 @@ export function ProcedureCard({
                     }
                   }}
                   className="flex-1 h-9 border-2 border-blue-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-300"
-                  onBlur={() => setTimeout(() => setShowItemSuggestions(false), 100)}
+                  onBlur={() => setTimeout(() => {
+                    setShowItemSuggestions(false);
+                    setItemDropdownPos(null);
+                  }, 100)}
                 />
                 <Button
                   size="sm"
@@ -547,21 +659,6 @@ export function ProcedureCard({
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
-
-              {/* Item Suggestions */}
-              {showItemSuggestions && itemSuggestions.length > 0 && (
-                <div className="absolute top-full left-6 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-10 overflow-hidden">
-                  {itemSuggestions.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
-                      onClick={() => handleAddItem(suggestion)}
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 
@@ -629,9 +726,9 @@ export function ProcedureCard({
             )}
 
             {/* Add Instrument */}
-            <div className="relative pl-6 border-l-4 border-orange-600/60 pt-3 pb-2 border-2 border-orange-600/40 rounded-lg bg-orange-50/30 p-4">
+            <div className="relative pl-6 border-l-4 border-orange-600/60 pt-3 pb-2 border-2 border-orange-600/40 rounded-lg bg-orange-50/30 p-4 overflow-visible">
               <label className="text-xs font-semibold text-orange-900 mb-2 block">Add New Instrument</label>
-              <div className="flex gap-2">
+              <div ref={instrumentInputRef} className="flex gap-2 relative">
                 <Input
                   placeholder="Type instrument name..."
                   value={newInstrument}
@@ -653,21 +750,6 @@ export function ProcedureCard({
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
-
-              {/* Suggestions */}
-              {suggestions.length > 0 && (
-                <div className="absolute top-full left-6 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-10 overflow-hidden">
-                  {suggestions.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
-                      onClick={() => handleAddInstrument(suggestion)}
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -690,6 +772,60 @@ export function ProcedureCard({
           currentIndex={currentImageIndex}
           onNavigate={handleNavigateImage}
         />
+      )}
+
+      {/* Instrument Suggestions Portal */}
+      {suggestions.length > 0 && instrumentDropdownPos && typeof document !== 'undefined' && document.body && createPortal(
+        <div
+          data-instrument-dropdown
+          style={{
+            position: 'absolute',
+            top: `${instrumentDropdownPos.top}px`,
+            left: `${instrumentDropdownPos.left}px`,
+            width: `${instrumentDropdownPos.width}px`,
+            zIndex: 9999,
+          }}
+          className="mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
+        >
+          {suggestions.map((suggestion) => (
+            <button
+              key={suggestion}
+              className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
+              onClick={() => handleAddInstrument(suggestion)}
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
+
+      {/* Item Suggestions Portal */}
+      {showItemSuggestions && itemSuggestions.length > 0 && itemDropdownPos && typeof document !== 'undefined' && document.body && createPortal(
+        <div
+          data-item-dropdown
+          style={{
+            position: 'absolute',
+            top: `${itemDropdownPos.top}px`,
+            left: `${itemDropdownPos.left}px`,
+            width: `${itemDropdownPos.width}px`,
+            zIndex: 9999,
+          }}
+          className="mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
+        >
+          {itemSuggestions.map((suggestion) => (
+            <button
+              key={suggestion}
+              className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
+              onClick={() => handleAddItem(suggestion)}
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>,
+        document.body
       )}
     </div>
   );
