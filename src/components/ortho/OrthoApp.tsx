@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
-import { Activity, Printer, Download, Trash2, X, Settings2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Activity, Printer, Download, Trash2, X, Settings2, Plus, ChevronDown, ChevronUp, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,7 @@ import { useProcedures } from '@/hooks/useProcedures';
 import { Procedure, ActiveProcedure, SizeQty } from '@/types/procedure';
 
 export default function OrthoApp() {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { procedures, loading, procedureTypes, refetchSingleProcedure, searchProcedures, searchInstruments, searchItems } = useProcedures();
 
@@ -247,6 +249,15 @@ export default function OrthoApp() {
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-8 w-8 sm:h-9 sm:w-9" 
+                onClick={() => navigate('/admin')}
+                title="Admin Panel"
+              >
+                <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </Button>
               <Select value={materialType} onValueChange={setMaterialType}>
                 <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-9 text-xs sm:text-sm">
                   <SelectValue />
