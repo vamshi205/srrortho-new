@@ -77,9 +77,13 @@ export function AddProcedureForm() {
     setInstruments(instruments.filter((_, i) => i !== index));
   };
 
-  const updateInstrument = (index: number, field: keyof Instrument, value: string) => {
+  const updateInstrument = (index: number, field: keyof Instrument, value: string | { room: string; rack: string; box: string }) => {
     const updated = [...instruments];
-    updated[index][field] = value;
+    if (field === 'location' && typeof value === 'object') {
+      updated[index].location = value;
+    } else if (field !== 'location') {
+      updated[index][field] = value as string;
+    }
     setInstruments(updated);
   };
 
@@ -244,6 +248,19 @@ export function AddProcedureForm() {
         resetForm();
         setSelectedProcedureToEdit('__NEW__');
       } catch (error: any) {
+        console.error('Error saving to Google Sheets:', error);
+        const errorMessage = error?.message || 'Unknown error occurred';
+        
+        // Show detailed error message
+        toast({
+          title: 'Failed to Save',
+          description: errorMessage.includes('not configured') 
+            ? 'Google Apps Script URL not configured. Please set VITE_GOOGLE_APPS_SCRIPT_URL in environment variables.'
+            : `Error: ${errorMessage}. Check console for details.`,
+          variant: 'destructive',
+          duration: 8000,
+        });
+        
         // If API is not configured, offer manual copy option
         const tabData = copyProcedureDataToClipboard(procedureData);
         
@@ -252,17 +269,12 @@ export function AddProcedureForm() {
           await navigator.clipboard.writeText(tabData);
           toast({
             title: 'Data Copied to Clipboard',
-            description: 'Google Sheets API not configured. Data copied to clipboard. Paste it into your Google Sheet (Ctrl+V or Cmd+V).',
-            duration: 8000,
+            description: 'Data copied to clipboard as fallback. Paste it into your Google Sheet (Ctrl+V or Cmd+V).',
+            duration: 5000,
           });
         } catch (clipboardError) {
           // Fallback: show data in console
           console.log('Copy this data to your Google Sheet:', tabData);
-          toast({
-            title: 'Copy Data Manually',
-            description: 'Check browser console for data to copy. Or use the "Copy Data" button.',
-            duration: 8000,
-          });
         }
       }
     } catch (error) {
@@ -278,11 +290,11 @@ export function AddProcedureForm() {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>{isEditMode ? 'Edit Procedure' : 'Add New Procedure'}</CardTitle>
-            <CardDescription>
+      <CardHeader className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="min-w-0 flex-1">
+            <CardTitle className="text-base sm:text-lg">{isEditMode ? 'Edit Procedure' : 'Add New Procedure'}</CardTitle>
+            <CardDescription className="text-xs sm:text-sm mt-1">
               {isEditMode 
                 ? 'Edit the selected procedure. Changes will be saved to Google Sheets.'
                 : 'Add a complete procedure with items and instruments. All data will be saved to Google Sheets in one row.'}
@@ -296,6 +308,7 @@ export function AddProcedureForm() {
                 resetForm();
                 setSelectedProcedureToEdit('__NEW__');
               }}
+              className="w-full sm:w-auto flex-shrink-0"
             >
               <PlusCircle className="w-4 h-4 mr-2" />
               New Procedure
@@ -303,18 +316,18 @@ export function AddProcedureForm() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
         {/* Procedure Selector for Editing */}
-        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+        <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 border rounded-lg bg-muted/30">
           <h3 className="font-semibold text-sm">Select Procedure to Edit</h3>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Select 
               value={selectedProcedureToEdit} 
               onValueChange={(value) => {
                 setSelectedProcedureToEdit(value);
               }}
             >
-              <SelectTrigger className="flex-1">
+              <SelectTrigger className="flex-1 w-full sm:w-auto">
                 <SelectValue placeholder={proceduresLoading ? "Loading procedures..." : "Select a procedure to edit"} />
               </SelectTrigger>
               <SelectContent>
@@ -334,6 +347,7 @@ export function AddProcedureForm() {
                   resetForm();
                   setSelectedProcedureToEdit('__NEW__');
                 }}
+                className="w-full sm:w-auto"
               >
                 Clear
               </Button>
@@ -342,9 +356,9 @@ export function AddProcedureForm() {
         </div>
 
         {/* Procedure Basic Info */}
-        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+        <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 border rounded-lg bg-muted/30">
           <h3 className="font-semibold text-sm">Procedure Information</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label htmlFor="procedure-name">Procedure Name *</Label>
               <Input
@@ -379,36 +393,37 @@ export function AddProcedureForm() {
         </div>
 
         {/* Items Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-0">
             <h3 className="font-semibold text-sm">Items (Implants)</h3>
-            <Button onClick={addItem} size="sm" variant="outline">
+            <Button onClick={addItem} size="sm" variant="outline" className="w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Add Item
             </Button>
           </div>
 
           {items.map((item, itemIndex) => (
-            <Card key={itemIndex} className="p-4">
-              <div className="space-y-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1 space-y-2">
+            <Card key={itemIndex} className="p-3 sm:p-4">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-start justify-between gap-2 sm:gap-4">
+                  <div className="flex-1 space-y-3 sm:space-y-4 min-w-0">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                      <div className="flex-1 space-y-2 min-w-0">
                         <Label>Item Name *</Label>
                         <Input
                           placeholder="e.g., Titanium Plate"
                           value={item.name}
                           onChange={(e) => updateItem(itemIndex, 'name', e.target.value)}
+                          className="w-full"
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 w-full sm:w-auto sm:min-w-[140px]">
                         <Label>Item Type</Label>
                         <Select
                           value={item.isFixed ? 'fixed' : 'selectable'}
                           onValueChange={(value) => updateItem(itemIndex, 'isFixed', value === 'fixed')}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-full sm:w-32">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -428,18 +443,19 @@ export function AddProcedureForm() {
                           placeholder="1"
                           value={item.fixedQty || '1'}
                           onChange={(e) => updateItem(itemIndex, 'fixedQty', e.target.value)}
-                          className="w-32"
+                          className="w-full sm:w-32"
                         />
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
                           <Label>Sizes & Quantities</Label>
                           <Button
                             type="button"
                             onClick={() => addItemSize(itemIndex)}
                             size="sm"
                             variant="ghost"
+                            className="w-full sm:w-auto"
                           >
                             <Plus className="w-3 h-3 mr-1" />
                             Add Size
@@ -452,7 +468,7 @@ export function AddProcedureForm() {
                                 placeholder="Size (e.g., 6mm)"
                                 value={sizeQty.size}
                                 onChange={(e) => updateItemSize(itemIndex, sizeIndex, 'size', e.target.value)}
-                                className="flex-1"
+                                className="flex-1 min-w-0"
                               />
                               <Input
                                 type="number"
@@ -460,7 +476,7 @@ export function AddProcedureForm() {
                                 placeholder="Qty"
                                 value={sizeQty.qty}
                                 onChange={(e) => updateItemSize(itemIndex, sizeIndex, 'qty', e.target.value)}
-                                className="w-24"
+                                className="w-20 sm:w-24"
                               />
                               {item.sizes.length > 1 && (
                                 <Button
@@ -468,7 +484,7 @@ export function AddProcedureForm() {
                                   onClick={() => removeItemSize(itemIndex, sizeIndex)}
                                   size="icon"
                                   variant="ghost"
-                                  className="h-9 w-9"
+                                  className="h-9 w-9 flex-shrink-0"
                                 >
                                   <X className="w-4 h-4" />
                                 </Button>
@@ -496,28 +512,31 @@ export function AddProcedureForm() {
                     <div className="space-y-2">
                       <Label>Location (Optional)</Label>
                       <div className="grid grid-cols-3 gap-2">
-                        <div className="space-y-1">
+                        <div className="space-y-1 min-w-0">
                           <Label className="text-xs text-muted-foreground">Room</Label>
                           <Input
                             placeholder="Room No"
                             value={item.location?.room || ''}
                             onChange={(e) => updateItem(itemIndex, 'location', { ...(item.location || { room: '', rack: '', box: '' }), room: e.target.value })}
+                            className="w-full"
                           />
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 min-w-0">
                           <Label className="text-xs text-muted-foreground">Rack</Label>
                           <Input
                             placeholder="Rack No"
                             value={item.location?.rack || ''}
                             onChange={(e) => updateItem(itemIndex, 'location', { ...(item.location || { room: '', rack: '', box: '' }), rack: e.target.value })}
+                            className="w-full"
                           />
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 min-w-0">
                           <Label className="text-xs text-muted-foreground">Box</Label>
                           <Input
                             placeholder="Box No"
                             value={item.location?.box || ''}
                             onChange={(e) => updateItem(itemIndex, 'location', { ...(item.location || { room: '', rack: '', box: '' }), box: e.target.value })}
+                            className="w-full"
                           />
                         </div>
                       </div>
@@ -528,7 +547,7 @@ export function AddProcedureForm() {
                     onClick={() => removeItem(itemIndex)}
                     size="icon"
                     variant="ghost"
-                    className="text-destructive hover:text-destructive"
+                    className="text-destructive hover:text-destructive flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10"
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -539,19 +558,19 @@ export function AddProcedureForm() {
         </div>
 
         {/* Instruments Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-0">
             <h3 className="font-semibold text-sm">Instruments</h3>
-            <Button onClick={addInstrument} size="sm" variant="outline">
+            <Button onClick={addInstrument} size="sm" variant="outline" className="w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Add Instrument
             </Button>
           </div>
 
           {instruments.map((instrument, index) => (
-            <Card key={index} className="p-4">
-              <div className="flex items-start gap-4">
-                <div className="flex-1 space-y-4">
+            <Card key={index} className="p-3 sm:p-4">
+              <div className="flex items-start gap-2 sm:gap-4">
+                <div className="flex-1 space-y-3 sm:space-y-4 min-w-0">
                   <div className="space-y-2">
                     <Label>Instrument Name *</Label>
                     <Input
@@ -576,28 +595,31 @@ export function AddProcedureForm() {
                   <div className="space-y-2">
                     <Label>Location (Optional)</Label>
                     <div className="grid grid-cols-3 gap-2">
-                      <div className="space-y-1">
+                      <div className="space-y-1 min-w-0">
                         <Label className="text-xs text-muted-foreground">Room</Label>
                         <Input
                           placeholder="Room No"
                           value={instrument.location?.room || ''}
                           onChange={(e) => updateInstrument(index, 'location', { ...(instrument.location || { room: '', rack: '', box: '' }), room: e.target.value })}
+                          className="w-full"
                         />
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1 min-w-0">
                         <Label className="text-xs text-muted-foreground">Rack</Label>
                         <Input
                           placeholder="Rack No"
                           value={instrument.location?.rack || ''}
                           onChange={(e) => updateInstrument(index, 'location', { ...(instrument.location || { room: '', rack: '', box: '' }), rack: e.target.value })}
+                          className="w-full"
                         />
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1 min-w-0">
                         <Label className="text-xs text-muted-foreground">Box</Label>
                         <Input
                           placeholder="Box No"
                           value={instrument.location?.box || ''}
                           onChange={(e) => updateInstrument(index, 'location', { ...(instrument.location || { room: '', rack: '', box: '' }), box: e.target.value })}
+                          className="w-full"
                         />
                       </div>
                     </div>
@@ -608,7 +630,7 @@ export function AddProcedureForm() {
                   onClick={() => removeInstrument(index)}
                   size="icon"
                   variant="ghost"
-                  className="text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -618,7 +640,7 @@ export function AddProcedureForm() {
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end gap-2 pt-4 border-t">
+        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-2 pt-4 border-t">
           <Button 
             onClick={async () => {
               if (!procedureName.trim()) {
@@ -672,11 +694,12 @@ export function AddProcedureForm() {
             }}
             variant="outline"
             size="lg"
+            className="w-full sm:w-auto"
           >
             <Copy className="w-4 h-4 mr-2" />
             Copy Data
           </Button>
-          <Button onClick={handleSave} disabled={isSaving} size="lg">
+          <Button onClick={handleSave} disabled={isSaving} size="lg" className="w-full sm:w-auto">
             {isEditMode ? (
               <>
                 <Edit className="w-4 h-4 mr-2" />

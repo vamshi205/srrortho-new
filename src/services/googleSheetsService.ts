@@ -6,7 +6,8 @@ const SHEET_NAME = 'Sheet1'; // Change if your sheet has a different name
 
 // Option 1: Using Google Apps Script (Recommended - No API key needed)
 // You need to create a Google Apps Script web app first
-const APPS_SCRIPT_URL = ''; // Add your Google Apps Script web app URL here
+// Set VITE_GOOGLE_APPS_SCRIPT_URL in your environment variables
+const APPS_SCRIPT_URL = import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL || '';
 
 // Option 2: Using Google Sheets API (Requires API key and OAuth)
 const API_KEY = ''; // Add your Google Sheets API key here
@@ -30,12 +31,32 @@ export interface ProcedureRowData {
  * Save procedure data to Google Sheets using Google Apps Script
  */
 export async function saveProcedureToSheets(data: ProcedureRowData): Promise<boolean> {
-  if (!APPS_SCRIPT_URL) {
-    throw new Error('Google Apps Script URL not configured. Please set up the web app first.');
+  const appsScriptUrl = import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL || '';
+  if (!appsScriptUrl) {
+    throw new Error('Google Apps Script URL not configured. Please set VITE_GOOGLE_APPS_SCRIPT_URL in your environment variables.');
   }
 
   try {
-    const response = await fetch(APPS_SCRIPT_URL, {
+    console.log('Saving to Google Sheets via:', appsScriptUrl);
+    console.log('Data being sent:', {
+      action: 'appendRow',
+      data: [
+        data.name,
+        data.items,
+        data.fixedItems,
+        data.fixedQty,
+        data.instruments,
+        data.type,
+        data.instrumentImages,
+        data.fixedItemImages,
+        data.itemImages,
+        data.itemLocations,
+        data.fixedItemLocations,
+        data.instrumentLocations,
+      ],
+    });
+
+    const response = await fetch(appsScriptUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -59,14 +80,27 @@ export async function saveProcedureToSheets(data: ProcedureRowData): Promise<boo
       }),
     });
 
+    console.log('Response status:', response.status, response.statusText);
+    
     if (!response.ok) {
-      throw new Error(`Failed to save: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Response error:', errorText);
+      throw new Error(`Failed to save: ${response.status} ${response.statusText}. ${errorText}`);
     }
 
     const result = await response.json();
-    return result.success === true;
-  } catch (error) {
+    console.log('Response result:', result);
+    
+    if (result.success !== true) {
+      throw new Error(result.error || 'Save operation failed');
+    }
+    
+    return true;
+  } catch (error: any) {
     console.error('Error saving to Google Sheets:', error);
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Network error: Could not connect to Google Apps Script. Check your internet connection and Apps Script URL.');
+    }
     throw error;
   }
 }
