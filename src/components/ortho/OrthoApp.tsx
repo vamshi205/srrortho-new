@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
-import { Activity, Printer, Download, Trash2, X, Settings2, Plus, ChevronDown, ChevronUp, Wrench } from 'lucide-react';
+import { Activity, Printer, Download, Trash2, X, Settings2, Plus, ChevronDown, ChevronUp, Wrench, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,7 +18,7 @@ import { Procedure, ActiveProcedure, SizeQty } from '@/types/procedure';
 export default function OrthoApp() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { procedures, loading, procedureTypes, refetchSingleProcedure, searchProcedures, searchInstruments, searchItems } = useProcedures();
+  const { procedures, loading, procedureTypes, refetchSingleProcedure, searchProcedures, searchInstruments, searchItems, fetchProcedures } = useProcedures();
 
   // Initialize with empty array - no procedures selected by default
   const [activeProcedures, setActiveProcedures] = useState<ActiveProcedure[]>([]);
@@ -64,9 +64,13 @@ export default function OrthoApp() {
         selectedItems: new Map(),
         selectedFixedItems: new Map(procedure.fixedItems.map((fi) => [fi.name, true])),
         fixedQtyEdits: new Map(),
+        boxNumbers: [],
         instrumentImageMapping: procedure.instrumentImageMapping || {},
         fixedItemImageMapping: procedure.fixedItemImageMapping || {},
         itemImageMapping: procedure.itemImageMapping || {},
+        instrumentLocationMapping: procedure.instrumentLocationMapping || {},
+        fixedItemLocationMapping: procedure.fixedItemLocationMapping || {},
+        itemLocationMapping: procedure.itemLocationMapping || {},
       };
       // Hide selector when a procedure is selected
       setShowProcedureSelector(false);
@@ -97,9 +101,13 @@ export default function OrthoApp() {
             selectedItems: p.selectedItems, 
             selectedFixedItems: p.selectedFixedItems, 
             fixedQtyEdits: p.fixedQtyEdits,
+            boxNumbers: p.boxNumbers || [],
             instrumentImageMapping: updated.instrumentImageMapping || p.instrumentImageMapping || {},
             fixedItemImageMapping: updated.fixedItemImageMapping || p.fixedItemImageMapping || {},
-            itemImageMapping: updated.itemImageMapping || p.itemImageMapping || {}
+            itemImageMapping: updated.itemImageMapping || p.itemImageMapping || {},
+            instrumentLocationMapping: updated.instrumentLocationMapping || p.instrumentLocationMapping || {},
+            fixedItemLocationMapping: updated.fixedItemLocationMapping || p.fixedItemLocationMapping || {},
+            itemLocationMapping: updated.itemLocationMapping || p.itemLocationMapping || {}
           } : p
         )
       );
@@ -184,6 +192,297 @@ export default function OrthoApp() {
     );
   }, []);
 
+  const handleRemoveFixedItemPart = useCallback((procedureName: string, itemName: string, partToRemove: string) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => {
+        if (p.name !== procedureName) return p;
+        
+        // Find the fixed item and remove the part
+        const updatedFixedItems = p.fixedItems.map((item) => {
+          if (item.name === itemName) {
+            const partToRemoveTrimmed = partToRemove.trim();
+            
+            // Simple approach: find the part in the string and remove it along with any comma
+            // Handle cases like "120° DHS Plate Short Barrell 4hole,5hole,6hole"
+            // The partToRemove might be just "4hole" but the actual part in the array is "120° DHS Plate Long Barrell 4hole"
+            let newName = itemName;
+            
+            // Split by comma to get individual parts
+            const parts = newName.split(',').map(p => p.trim());
+            
+            // Find which part contains the part to remove
+            let foundAndRemoved = false;
+            const updatedParts = parts.map((part, index) => {
+              // If this is the part being removed
+              if (part === partToRemoveTrimmed) {
+                // First, try to detect if it has a suffix pattern (like "4hole", "5hole" at the end)
+                // Pattern: space + number + word(s) at the end (e.g., " 4hole", " 5hole")
+                const suffixPattern = /\s+(\d+\w+)$/; // Matches space + number + word at the end
+                const match = part.match(suffixPattern);
+                if (match) {
+                  // Found a suffix pattern, remove just the suffix
+                  const beforeSuffix = part.slice(0, -match[0].length).trim();
+                  if (beforeSuffix.length > 0) {
+                    foundAndRemoved = true;
+                    return beforeSuffix;
+                  }
+                }
+                
+                // If no suffix pattern found, check if it's a short standalone part (like "5hole")
+                // Remove the entire part if it's short and simple
+                if (part.length < 15 && /^\d+\w+$/.test(part)) {
+                  foundAndRemoved = true;
+                  return null;
+                }
+                
+                // Otherwise, if it's a longer part without a clear suffix pattern, remove the entire part
+                foundAndRemoved = true;
+                return null;
+              }
+              
+              // If the part ends with the partToRemove and has content before it, remove just the suffix
+              // This handles edge cases where partToRemove might be a substring
+              if (part.endsWith(partToRemoveTrimmed) && part.length > partToRemoveTrimmed.length) {
+                const charBeforeIndex = part.length - partToRemoveTrimmed.length - 1;
+                const charBefore = charBeforeIndex >= 0 ? part[charBeforeIndex] : null;
+                
+                if (charBefore === ' ') {
+                  const beforePart = part.slice(0, -partToRemoveTrimmed.length).trim();
+                  if (beforePart.length > 0) {
+                    foundAndRemoved = true;
+                    return beforePart;
+                  }
+                }
+              }
+              
+              return part;
+            }).filter(p => p !== null && p.length > 0);
+            
+            if (updatedParts.length > 0 && foundAndRemoved) {
+              // Join parts with commas
+              newName = updatedParts.join(',');
+            } else if (!foundAndRemoved) {
+              // If we didn't find the part to remove, don't update
+              return item;
+            } else {
+              // If all parts were removed, don't update
+              return item;
+            }
+            
+            // Only update if name actually changed
+            if (newName !== itemName && newName.trim().length > 0) {
+              // Update fixedQtyEdits if it exists
+              const qtyMap = new Map(p.fixedQtyEdits);
+              const oldQty = qtyMap.get(itemName);
+              if (oldQty) {
+                qtyMap.delete(itemName);
+                qtyMap.set(newName.trim(), oldQty);
+              }
+              
+              // Update selectedFixedItems
+              const selectedMap = new Map(p.selectedFixedItems);
+              const wasSelected = selectedMap.get(itemName);
+              if (wasSelected !== undefined) {
+                selectedMap.delete(itemName);
+                selectedMap.set(newName.trim(), wasSelected);
+              }
+              
+              return { ...item, name: newName.trim() };
+            }
+          }
+          return item;
+        });
+        
+        return { ...p, fixedItems: updatedFixedItems };
+      })
+    );
+  }, []);
+
+  const handleRemoveSelectableItemPart = useCallback((procedureName: string, itemName: string, partToRemove: string) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => {
+        if (p.name !== procedureName) return p;
+        
+        // Update items array - find item and remove the part
+        const updatedItems = p.items.map((item) => {
+          // Parse the item to get the name
+          const match = item.match(/^(.+?)\s*\{(.+)\}$/);
+          if (match) {
+            const name = match[1].trim();
+            if (name === itemName) {
+              const partToRemoveTrimmed = partToRemove.trim();
+              
+              // Simple approach: find the part in the string and remove it along with any comma
+              let newName = name;
+              
+              // Try to find and remove the part with comma after it: "4hole,"
+              const patternWithCommaAfter = partToRemoveTrimmed + ',';
+              if (newName.includes(patternWithCommaAfter)) {
+                newName = newName.replace(patternWithCommaAfter, '');
+              } else {
+                // Try to find and remove the part with comma before it: ",4hole"
+                const patternWithCommaBefore = ',' + partToRemoveTrimmed;
+                if (newName.includes(patternWithCommaBefore)) {
+                  newName = newName.replace(patternWithCommaBefore, '');
+                } else {
+                  // Try to find if part is at the end of a word (like "4hole" in "120° DHS Plate Short Barrell 4hole")
+                  const parts = newName.split(',').map(p => p.trim());
+                  const updatedParts = parts.map(part => {
+                    // If this is the part being removed
+                    if (part === partToRemoveTrimmed) {
+                      // First, try to detect if it has a suffix pattern (like "4hole", "5hole" at the end)
+                      // Pattern: space + number + word(s) at the end (e.g., " 4hole", " 5hole")
+                      const suffixPattern = /\s+(\d+\w+)$/; // Matches space + number + word at the end
+                      const match = part.match(suffixPattern);
+                      if (match) {
+                        // Found a suffix pattern, remove just the suffix
+                        const beforeSuffix = part.slice(0, -match[0].length).trim();
+                        if (beforeSuffix.length > 0) {
+                          return beforeSuffix;
+                        }
+                      }
+                      
+                      // If no suffix pattern found, check if it's a short standalone part (like "5hole")
+                      // Remove the entire part if it's short and simple
+                      if (part.length < 15 && /^\d+\w+$/.test(part)) {
+                        return null;
+                      }
+                      
+                      // Otherwise, if it's a longer part without a clear suffix pattern, remove the entire part
+                      return null;
+                    }
+                    
+                    // If the part ends with the partToRemove and has content before it, remove just the suffix
+                    if (part.endsWith(partToRemoveTrimmed) && part.length > partToRemoveTrimmed.length) {
+                      const charBeforeIndex = part.length - partToRemoveTrimmed.length - 1;
+                      const charBefore = charBeforeIndex >= 0 ? part[charBeforeIndex] : null;
+                      
+                      if (charBefore === ' ') {
+                        const beforePart = part.slice(0, -partToRemoveTrimmed.length).trim();
+                        return beforePart.length > 0 ? beforePart : null;
+                      }
+                    }
+                    
+                    return part;
+                  }).filter(p => p !== null && p.length > 0);
+                  
+                  if (updatedParts.length > 0) {
+                    newName = updatedParts.join(',');
+                  } else {
+                    // If all parts were removed, don't update
+                    return item;
+                  }
+                }
+              }
+              
+              // Only update if name actually changed
+              if (newName !== name && newName.trim().length > 0) {
+                // Reconstruct the item string with new name
+                return `${newName.trim()} {${match[2]}}`;
+              }
+            }
+          } else {
+            // Item without size/qty pattern
+            if (item.trim() === itemName) {
+              const partToRemoveTrimmed = partToRemove.trim();
+              
+              // Simple approach: find the part in the string and remove it along with any comma
+              let newName = itemName;
+              
+              // Try to find and remove the part with comma after it: "4hole,"
+              const patternWithCommaAfter = partToRemoveTrimmed + ',';
+              if (newName.includes(patternWithCommaAfter)) {
+                newName = newName.replace(patternWithCommaAfter, '');
+              } else {
+                // Try to find and remove the part with comma before it: ",4hole"
+                const patternWithCommaBefore = ',' + partToRemoveTrimmed;
+                if (newName.includes(patternWithCommaBefore)) {
+                  newName = newName.replace(patternWithCommaBefore, '');
+                } else {
+                  // Try to find if part is at the end of a word
+                  const parts = newName.split(',').map(p => p.trim());
+                  const updatedParts = parts.map(part => {
+                    // If this is the part being removed
+                    if (part === partToRemoveTrimmed) {
+                      // First, try to detect if it has a suffix pattern (like "4hole", "5hole" at the end)
+                      // Pattern: space + number + word(s) at the end (e.g., " 4hole", " 5hole")
+                      const suffixPattern = /\s+(\d+\w+)$/; // Matches space + number + word at the end
+                      const match = part.match(suffixPattern);
+                      if (match) {
+                        // Found a suffix pattern, remove just the suffix
+                        const beforeSuffix = part.slice(0, -match[0].length).trim();
+                        if (beforeSuffix.length > 0) {
+                          return beforeSuffix;
+                        }
+                      }
+                      
+                      // If no suffix pattern found, check if it's a short standalone part (like "5hole")
+                      // Remove the entire part if it's short and simple
+                      if (part.length < 15 && /^\d+\w+$/.test(part)) {
+                        return null;
+                      }
+                      
+                      // Otherwise, if it's a longer part without a clear suffix pattern, remove the entire part
+                      return null;
+                    }
+                    
+                    // If the part ends with the partToRemove and has content before it, remove just the suffix
+                    if (part.endsWith(partToRemoveTrimmed) && part.length > partToRemoveTrimmed.length) {
+                      const charBeforeIndex = part.length - partToRemoveTrimmed.length - 1;
+                      const charBefore = charBeforeIndex >= 0 ? part[charBeforeIndex] : null;
+                      
+                      if (charBefore === ' ') {
+                        const beforePart = part.slice(0, -partToRemoveTrimmed.length).trim();
+                        return beforePart.length > 0 ? beforePart : null;
+                      }
+                    }
+                    
+                    return part;
+                  }).filter(p => p !== null && p.length > 0);
+                  
+                  if (updatedParts.length > 0) {
+                    newName = updatedParts.join(',');
+                  } else {
+                    // If all parts were removed, don't update
+                    return item;
+                  }
+                }
+              }
+              
+              // Only update if name actually changed
+              if (newName !== itemName && newName.trim().length > 0) {
+                return newName.trim();
+              }
+            }
+          }
+          return item;
+        });
+        
+        // Update selectedItems map - find items that were updated
+        const selectedMap = new Map(p.selectedItems);
+        updatedItems.forEach((item) => {
+          const match = item.match(/^(.+?)\s*\{(.+)\}$/);
+          const newName = match ? match[1].trim() : item.trim();
+          const oldItem = p.items.find((oldItem) => {
+            const oldMatch = oldItem.match(/^(.+?)\s*\{(.+)\}$/);
+            const oldName = oldMatch ? oldMatch[1].trim() : oldItem.trim();
+            return oldName === itemName;
+          });
+          
+          if (oldItem && newName !== itemName) {
+            const selectedItem = selectedMap.get(itemName);
+            if (selectedItem) {
+              selectedMap.delete(itemName);
+              selectedMap.set(newName, selectedItem);
+            }
+          }
+        });
+        
+        return { ...p, items: updatedItems, selectedItems: selectedMap };
+      })
+    );
+  }, []);
+
   const handlePrint = () => {
     if (!hospitalName || !dcNo) {
       setShowSettingsModal(true);
@@ -229,6 +528,28 @@ export default function OrthoApp() {
     setShowProcedureSelector(true);
   };
 
+  const handleAddBox = useCallback((procedureName: string, boxNumber: string) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => {
+        if (p.name !== procedureName) return p;
+        const trimmed = boxNumber.trim();
+        if (trimmed && !p.boxNumbers.includes(trimmed)) {
+          return { ...p, boxNumbers: [...p.boxNumbers, trimmed] };
+        }
+        return p;
+      })
+    );
+  }, []);
+
+  const handleRemoveBox = useCallback((procedureName: string, index: number) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => {
+        if (p.name !== procedureName) return p;
+        return { ...p, boxNumbers: p.boxNumbers.filter((_, i) => i !== index) };
+      })
+    );
+  }, []);
+
   if (!isAuthenticated) {
     return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
   }
@@ -268,6 +589,18 @@ export default function OrthoApp() {
                   <SelectItem value="None">No Prefix</SelectItem>
                 </SelectContent>
               </Select>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-8 w-8 sm:h-9 sm:w-9" 
+                onClick={() => {
+                  fetchProcedures();
+                }}
+                title="Refresh data from Google Sheets"
+                disabled={loading}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
               <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => setShowSettingsModal(true)}>
                 <Settings2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </Button>
@@ -310,6 +643,10 @@ export default function OrthoApp() {
                     onSearchItems={searchItems}
                     instrumentSuggestions={[]}
                     onSearchInstruments={searchInstruments}
+                    onRemoveFixedItemPart={(item, part) => handleRemoveFixedItemPart(procedure.name, item, part)}
+                    onRemoveSelectableItemPart={(item, part) => handleRemoveSelectableItemPart(procedure.name, item, part)}
+                    onAddBox={(boxNumber) => handleAddBox(procedure.name, boxNumber)}
+                    onRemoveBox={(index) => handleRemoveBox(procedure.name, index)}
                   />
                 ))}
               </div>

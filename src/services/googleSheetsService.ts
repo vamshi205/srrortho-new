@@ -21,6 +21,9 @@ export interface ProcedureRowData {
   instrumentImages: string; // Pipe-separated image URLs
   fixedItemImages: string; // Pipe-separated image URLs
   itemImages: string; // Pipe-separated image URLs
+  itemLocations: string; // Pipe-separated locations for selectable items (format: Room1|Rack2|Box3|Room4|Rack5|Box6)
+  fixedItemLocations: string; // Pipe-separated locations for fixed items
+  instrumentLocations: string; // Pipe-separated locations for instruments
 }
 
 /**
@@ -49,6 +52,9 @@ export async function saveProcedureToSheets(data: ProcedureRowData): Promise<boo
           data.instrumentImages,
           data.fixedItemImages,
           data.itemImages,
+          data.itemLocations,
+          data.fixedItemLocations,
+          data.instrumentLocations,
         ],
       }),
     });
@@ -79,6 +85,9 @@ export function copyProcedureDataToClipboard(data: ProcedureRowData): string {
     data.instrumentImages,
     data.fixedItemImages,
     data.itemImages,
+    data.itemLocations,
+    data.fixedItemLocations,
+    data.instrumentLocations,
   ].join('\t'); // Tab-separated for easy paste into Google Sheets
 
   return rowData;
@@ -105,6 +114,9 @@ export function formatProcedureAsCSV(data: ProcedureRowData): string {
     escapeCSV(data.instrumentImages),
     escapeCSV(data.fixedItemImages),
     escapeCSV(data.itemImages),
+    escapeCSV(data.itemLocations),
+    escapeCSV(data.fixedItemLocations),
+    escapeCSV(data.instrumentLocations),
   ].join(',');
 }
 

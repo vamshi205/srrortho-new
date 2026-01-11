@@ -33,6 +33,8 @@ export function InstrumentImageModal({
   const [currentUrl, setCurrentUrl] = useState(imageUrl || '');
   const [rotation, setRotation] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [triedUrls, setTriedUrls] = useState<Set<string>>(new Set());
+  const [allFormatsFailed, setAllFormatsFailed] = useState(false);
 
   useEffect(() => {
     if (imageUrl) {
@@ -40,27 +42,64 @@ export function InstrumentImageModal({
       setRotation(0);
       setZoom(1);
       setCurrentImageError(false);
+      setTriedUrls(new Set([imageUrl]));
+      setAllFormatsFailed(false);
     }
   }, [imageUrl]);
 
   const handleImageError = () => {
-    if (!currentImageError && fallbackUrls) {
-      setCurrentImageError(true);
-      // Try preview format
-      if (currentUrl === fallbackUrls.thumbnail) {
-        setCurrentUrl(fallbackUrls.preview);
-        return;
-      }
-      // Try uc format
-      if (currentUrl === fallbackUrls.preview) {
-        setCurrentUrl(fallbackUrls.uc);
-        return;
-      }
+    if (!fallbackUrls) {
+      setAllFormatsFailed(true);
+      return;
     }
+
+    // Track that we tried this URL
+    const updatedTriedUrls = new Set([...triedUrls, currentUrl]);
+    setTriedUrls(updatedTriedUrls);
+    
+    // Try alternative formats in order: thumbnail -> preview -> uc -> original
+    // Check which format we're currently on and try the next one
+    if (currentUrl === fallbackUrls.thumbnail && !updatedTriedUrls.has(fallbackUrls.preview)) {
+      setCurrentImageError(true);
+      setCurrentUrl(fallbackUrls.preview);
+      return;
+    }
+    if (currentUrl === fallbackUrls.preview && !updatedTriedUrls.has(fallbackUrls.uc)) {
+      setCurrentImageError(true);
+      setCurrentUrl(fallbackUrls.uc);
+      return;
+    }
+    if (currentUrl === fallbackUrls.uc && fallbackUrls.original && !updatedTriedUrls.has(fallbackUrls.original)) {
+      setCurrentImageError(true);
+      setCurrentUrl(fallbackUrls.original);
+      return;
+    }
+    
+    // Also try formats we haven't tried yet, regardless of current URL
+    if (!updatedTriedUrls.has(fallbackUrls.preview)) {
+      setCurrentImageError(true);
+      setCurrentUrl(fallbackUrls.preview);
+      return;
+    }
+    if (!updatedTriedUrls.has(fallbackUrls.uc)) {
+      setCurrentImageError(true);
+      setCurrentUrl(fallbackUrls.uc);
+      return;
+    }
+    if (fallbackUrls.original && !updatedTriedUrls.has(fallbackUrls.original)) {
+      setCurrentImageError(true);
+      setCurrentUrl(fallbackUrls.original);
+      return;
+    }
+    
+    // If we've tried all formats, show error
+    setAllFormatsFailed(true);
+    setCurrentImageError(false);
   };
 
   const handleImageLoad = () => {
     setCurrentImageError(false);
+    setAllFormatsFailed(false);
   };
 
   const handleRotate = () => {
@@ -105,9 +144,27 @@ export function InstrumentImageModal({
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center justify-center min-h-[200px] p-4 relative">
-          {currentImageError && fallbackUrls && (
+          {currentImageError && fallbackUrls && !allFormatsFailed && (
             <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
               Trying alternative URL format...
+            </div>
+          )}
+          
+          {allFormatsFailed && (
+            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+              <p className="font-semibold">Unable to load image</p>
+              <p className="mt-1 text-xs">All image formats failed to load. Please check the image URL.</p>
+              {fallbackUrls?.original && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenInNewTab}
+                  className="mt-2"
+                >
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  Try opening in new tab
+                </Button>
+              )}
             </div>
           )}
           
@@ -139,20 +196,27 @@ export function InstrumentImageModal({
 
             {/* Image */}
             <div className="overflow-auto max-h-[70vh] w-full flex items-center justify-center">
-              <img
-                key={currentUrl}
-                src={currentUrl}
-                alt={instrumentName}
-                className="rounded border border-border transition-transform"
-                style={{
-                  transform: `rotate(${rotation}deg) scale(${zoom})`,
-                  maxWidth: '100%',
-                  maxHeight: '70vh',
-                  objectFit: 'contain'
-                }}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-              />
+              {!allFormatsFailed ? (
+                <img
+                  key={currentUrl}
+                  src={currentUrl}
+                  alt={instrumentName}
+                  className="rounded border border-border transition-transform"
+                  style={{
+                    transform: `rotate(${rotation}deg) scale(${zoom})`,
+                    maxWidth: '100%',
+                    maxHeight: '70vh',
+                    objectFit: 'contain'
+                  }}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
+                  <p className="text-lg font-semibold mb-2">Image not available</p>
+                  <p className="text-sm">Unable to load image from the provided URL</p>
+                </div>
+              )}
             </div>
           </div>
 

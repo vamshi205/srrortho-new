@@ -10,6 +10,7 @@ import {
   X,
   Plus,
   Info,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,10 @@ interface ProcedureCardProps {
   onSearchItems: (query: string) => string[];
   instrumentSuggestions: string[];
   onSearchInstruments: (query: string) => Array<{ instrument: string; procedureName: string }>;
+  onRemoveFixedItemPart: (itemName: string, partToRemove: string) => void;
+  onRemoveSelectableItemPart: (itemName: string, partToRemove: string) => void;
+  onAddBox: (boxNumber: string) => void;
+  onRemoveBox: (index: number) => void;
 }
 
 function parseSizeQtyFromItem(item: string): { name: string; sizeQty: SizeQty[] } {
@@ -51,6 +56,17 @@ function parseSizeQtyFromItem(item: string): { name: string; sizeQty: SizeQty[] 
   return { name, sizeQty: pairs };
 }
 
+function splitItemNameByComma(itemName: string): { parts: string[]; hasCommas: boolean } {
+  console.log('splitItemNameByComma called with:', itemName);
+  if (!itemName || !itemName.includes(',')) {
+    console.log('No commas found in:', itemName);
+    return { parts: [itemName], hasCommas: false };
+  }
+  const parts = itemName.split(',').map(part => part.trim()).filter(Boolean);
+  console.log('Commas found! Parts:', parts);
+  return { parts, hasCommas: parts.length > 1 };
+}
+
 export function ProcedureCard({
   procedure,
   isCollapsed,
@@ -66,9 +82,14 @@ export function ProcedureCard({
   onAddItem,
   onSearchItems,
   onSearchInstruments,
+  onRemoveFixedItemPart,
+  onRemoveSelectableItemPart,
+  onAddBox,
+  onRemoveBox,
 }: ProcedureCardProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [newInstrument, setNewInstrument] = useState('');
+  const [newBoxNumber, setNewBoxNumber] = useState('');
   const [suggestions, setSuggestions] = useState<Array<{ instrument: string; procedureName: string }>>([]);
   const [showDetails, setShowDetails] = useState<Set<string>>(new Set());
   const [showImageModal, setShowImageModal] = useState(false);
@@ -292,13 +313,44 @@ export function ProcedureCard({
       fileId = ucMatch[1];
     }
     
-    // Format 2: https://drive.google.com/file/d/FILE_ID/view
-    const fileMatch = url.match(/\/file\/d\/([^\/]+)/);
+    // Format 2: https://drive.google.com/file/d/FILE_ID/view or /preview
+    const fileMatch = url.match(/\/file\/d\/([^\/\?]+)/);
     if (fileMatch) {
       fileId = fileMatch[1];
     }
     
-    if (!fileId) return null;
+    // Format 3: https://drive.google.com/open?id=FILE_ID
+    const openMatch = url.match(/open[?&]id=([^&]+)/);
+    if (openMatch) {
+      fileId = openMatch[1];
+    }
+    
+    // Format 4: Direct thumbnail URL - extract ID
+    const thumbnailMatch = url.match(/thumbnail[?&]id=([^&]+)/);
+    if (thumbnailMatch) {
+      fileId = thumbnailMatch[1];
+    }
+    
+    // Format 5: Already a direct image URL (ends with image extension)
+    if (url.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)) {
+      // It's already a direct image URL, return it as all formats
+      return {
+        thumbnail: url,
+        preview: url,
+        uc: url,
+        original: url
+      };
+    }
+    
+    if (!fileId) {
+      // If we can't extract file ID, return the original URL as all formats
+      return {
+        thumbnail: url,
+        preview: url,
+        uc: url,
+        original: url
+      };
+    }
     
     // Return multiple working formats
     return {
@@ -430,12 +482,13 @@ export function ProcedureCard({
                 </div>
               </div>
               <div className="space-y-3 pl-6 border-l-4 border-primary/60">
-                {procedure.fixedItems.map((fixedItem) => {
+                {procedure.fixedItems.map((fixedItem, fixedIndex) => {
+                  console.log('Rendering fixed item:', fixedItem.name);
                   const isSelected = procedure.selectedFixedItems.get(fixedItem.name) ?? true;
                   const editedQty = procedure.fixedQtyEdits.get(fixedItem.name) ?? fixedItem.qty;
                   return (
                     <div 
-                      key={fixedItem.name} 
+                      key={`${procedure.name}-fixed-${fixedIndex}-${fixedItem.name}`} 
                       className={`item-row flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-200 ${
                         isSelected 
                           ? 'bg-primary/5 border-2 border-primary/40 shadow-sm' 
@@ -449,10 +502,49 @@ export function ProcedureCard({
                         }
                         className="flex-shrink-0"
                       />
-                      <div className="flex-1 flex items-center gap-1.5 min-w-0">
-                        <span className={`text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 break-words sm:break-normal`}>
-                          {fixedItem.name}
-                        </span>
+                      <div className="flex-1 flex items-center gap-1.5 min-w-0 flex-wrap">
+                        {(() => {
+                          const { parts, hasCommas } = splitItemNameByComma(fixedItem.name);
+                          // Debug: log when we detect commas
+                          if (hasCommas) {
+                            console.log('Fixed item with commas detected:', fixedItem.name, 'Parts:', parts);
+                          }
+                          if (hasCommas) {
+                            return (
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {parts.map((part, idx) => (
+                                  <span key={`${procedure.name}-${fixedItem.name}-${idx}-${part}`} className="inline-flex items-baseline gap-0.5">
+                                    <span className={`text-sm ${isSelected ? 'font-semibold' : 'font-medium'}`}>
+                                      {part}
+                                    </span>
+                                    <sup className="inline-block">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                          onRemoveFixedItemPart(fixedItem.name, part);
+                                        }}
+                                        className="hover:bg-destructive/30 rounded-full p-0.5 transition-colors text-destructive flex-shrink-0 ml-0.5"
+                                        title={`Remove ${part}`}
+                                        type="button"
+                                      >
+                                        <X className="w-2 h-2" />
+                                      </button>
+                                    </sup>
+                                    {idx < parts.length - 1 && (
+                                      <span className="text-muted-foreground">,</span>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return (
+                            <span className={`text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 break-words sm:break-normal`}>
+                              {fixedItem.name}
+                            </span>
+                          );
+                        })()}
                         {procedure.fixedItemImageMapping?.[fixedItem.name] && (
                           <button
                             onClick={() => handleShowFixedItemImage(fixedItem.name)}
@@ -461,6 +553,15 @@ export function ProcedureCard({
                           >
                             <Info className="w-3.5 h-3.5" />
                           </button>
+                        )}
+                        {procedure.fixedItemLocationMapping?.[fixedItem.name] && (
+                          <span 
+                            className="text-[10px] text-muted-foreground ml-1.5 px-1.5 py-0.5 bg-muted/50 rounded"
+                            title={`Room: ${procedure.fixedItemLocationMapping[fixedItem.name]?.room || '-'}, Rack: ${procedure.fixedItemLocationMapping[fixedItem.name]?.rack || '-'}, Box: ${procedure.fixedItemLocationMapping[fixedItem.name]?.box || '-'}`}
+                          >
+                            <MapPin className="w-2.5 h-2.5 inline mr-0.5" />
+                            {procedure.fixedItemLocationMapping[fixedItem.name]?.room || '-'}/{procedure.fixedItemLocationMapping[fixedItem.name]?.rack || '-'}/{procedure.fixedItemLocationMapping[fixedItem.name]?.box || '-'}
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 w-full sm:w-auto justify-end sm:justify-start">
@@ -497,15 +598,16 @@ export function ProcedureCard({
             </div>
             {procedure.items.length > 0 ? (
               <div className="space-y-3 pl-6 border-l-4 border-primary/60">
-                {procedure.items.map((item) => {
+                {procedure.items.map((item, itemIndex) => {
                   const parsed = parseSizeQtyFromItem(item);
+                  console.log('Rendering selectable item:', parsed.name);
                   const selectedItem = procedure.selectedItems.get(parsed.name);
                   const isSelected = !!selectedItem;
                   const sizeQty = selectedItem?.sizeQty || parsed.sizeQty;
                   const showItemDetails = isSelected ? (showDetails.has(parsed.name) || sizeQty.length > 0) : false;
 
                   return (
-                    <div key={item} className="space-y-2">
+                    <div key={`${procedure.name}-item-${itemIndex}-${item}`} className="space-y-2">
                       <div className={`item-row flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all duration-200 ${
                         isSelected 
                           ? 'bg-primary/5 border-2 border-primary/40 shadow-sm' 
@@ -532,18 +634,68 @@ export function ProcedureCard({
                           }}
                           className="flex-shrink-0"
                         />
-                        <span className={`flex-1 text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 break-words sm:break-normal`}>
-                          {parsed.name}
-                        </span>
-                        {procedure.itemImageMapping?.[parsed.name] && (
-                          <button
-                            onClick={() => handleShowSelectableItemImage(parsed.name)}
-                            className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors text-primary flex-shrink-0"
-                            title={`View image of ${parsed.name}`}
-                          >
-                            <Info className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <div className="flex-1 flex items-center gap-1.5 min-w-0 flex-wrap">
+                          {(() => {
+                            const { parts, hasCommas } = splitItemNameByComma(parsed.name);
+                            // Debug: log when we detect commas
+                            if (hasCommas) {
+                              console.log('Selectable item with commas detected:', parsed.name, 'Parts:', parts);
+                            }
+                            if (hasCommas) {
+                              return (
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {parts.map((part, idx) => (
+                                    <span key={`${procedure.name}-${parsed.name}-${idx}-${part}`} className="inline-flex items-baseline gap-0.5">
+                                      <span className={`text-sm ${isSelected ? 'font-semibold' : 'font-medium'}`}>
+                                        {part}
+                                      </span>
+                                      <sup className="inline-block">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            onRemoveSelectableItemPart(parsed.name, part);
+                                          }}
+                                          className="hover:bg-destructive/30 rounded-full p-0.5 transition-colors text-destructive flex-shrink-0 ml-0.5"
+                                          title={`Remove ${part}`}
+                                          type="button"
+                                        >
+                                          <X className="w-2 h-2" />
+                                        </button>
+                                      </sup>
+                                      {idx < parts.length - 1 && (
+                                        <span className="text-muted-foreground">,</span>
+                                      )}
+                                    </span>
+                                  ))}
+                                </div>
+                              );
+                            }
+                            return (
+                              <span className={`text-sm ${isSelected ? 'font-semibold' : 'font-medium'} min-w-0 break-words sm:break-normal`}>
+                                {parsed.name}
+                              </span>
+                            );
+                          })()}
+                          {procedure.itemImageMapping?.[parsed.name] && (
+                            <button
+                              onClick={() => handleShowSelectableItemImage(parsed.name)}
+                              className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors text-primary flex-shrink-0"
+                              title={`View image of ${parsed.name}`}
+                            >
+                              <Info className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {procedure.itemLocationMapping?.[parsed.name] && (
+                            <span 
+                              className="text-[10px] text-muted-foreground ml-1.5 px-1.5 py-0.5 bg-muted/50 rounded"
+                              title={`Room: ${procedure.itemLocationMapping[parsed.name]?.room || '-'}, Rack: ${procedure.itemLocationMapping[parsed.name]?.rack || '-'}, Box: ${procedure.itemLocationMapping[parsed.name]?.box || '-'}`}
+                            >
+                              <MapPin className="w-2.5 h-2.5 inline mr-0.5" />
+                              {procedure.itemLocationMapping[parsed.name]?.room || '-'}/{procedure.itemLocationMapping[parsed.name]?.rack || '-'}/{procedure.itemLocationMapping[parsed.name]?.box || '-'}
+                            </span>
+                          )}
+                        </div>
                         {isSelected && (
                           <Button
                             variant="ghost"
@@ -691,32 +843,42 @@ export function ProcedureCard({
             {procedure.instruments.length > 0 ? (
               <div className="pl-6 border-l-4 border-orange-600/60">
                 <div className="flex flex-wrap gap-2">
-                  {procedure.instruments.map((instrument) => {
+                  {procedure.instruments.map((instrument, instIndex) => {
                     const hasImage = procedure.instrumentImageMapping?.[instrument] || null;
                     return (
-                      <Badge
-                        key={instrument}
-                        variant="secondary"
-                        className="pl-3 pr-1.5 py-1.5 flex items-center gap-1.5 hover:bg-secondary/80 transition-colors"
-                      >
-                        <span className="text-sm">{instrument}</span>
-                        {hasImage && (
-                          <button
-                            onClick={() => handleShowInstrumentImage(instrument)}
-                            className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors text-primary"
-                            title={`View image of ${instrument}`}
-                          >
-                            <Info className="w-3 h-3" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => onRemoveInstrument(instrument)}
-                          className="ml-1 hover:bg-destructive/20 rounded-full p-0.5 transition-colors"
-                          title="Remove instrument"
+                      <div key={`${procedure.name}-instrument-${instIndex}-${instrument}`} className="flex flex-col gap-1">
+                        <Badge
+                          variant="secondary"
+                          className="pl-3 pr-1.5 py-1.5 flex items-center gap-1.5 hover:bg-secondary/80 transition-colors"
                         >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
+                          <span className="text-sm">{instrument}</span>
+                          {hasImage && (
+                            <button
+                              onClick={() => handleShowInstrumentImage(instrument)}
+                              className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors text-primary"
+                              title={`View image of ${instrument}`}
+                            >
+                              <Info className="w-3 h-3" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onRemoveInstrument(instrument)}
+                            className="ml-1 hover:bg-destructive/20 rounded-full p-0.5 transition-colors"
+                            title="Remove instrument"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </Badge>
+                        {procedure.instrumentLocationMapping?.[instrument] && (
+                          <span 
+                            className="text-[10px] text-muted-foreground px-1.5 py-0.5 bg-muted/50 rounded inline-block mt-0.5"
+                            title={`Room: ${procedure.instrumentLocationMapping[instrument]?.room || '-'}, Rack: ${procedure.instrumentLocationMapping[instrument]?.rack || '-'}, Box: ${procedure.instrumentLocationMapping[instrument]?.box || '-'}`}
+                          >
+                            <MapPin className="w-2.5 h-2.5 inline mr-0.5" />
+                            {procedure.instrumentLocationMapping[instrument]?.room || '-'}/{procedure.instrumentLocationMapping[instrument]?.rack || '-'}/{procedure.instrumentLocationMapping[instrument]?.box || '-'}
+                          </span>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -748,6 +910,80 @@ export function ProcedureCard({
                   disabled={!newInstrument.trim()}
                   className="h-9 border-2 border-orange-500 hover:border-orange-600"
                   title="Add instrument to list"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Box Details */}
+          <div className="space-y-3 pt-2 border-t-2 border-border/60">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Package className="w-4 h-4 text-blue-600" />
+                <div>
+                  <h4 className="text-sm font-semibold">Box Details</h4>
+                  <p className="text-xs text-muted-foreground">Box numbers for this procedure</p>
+                </div>
+              </div>
+            </div>
+            {procedure.boxNumbers && procedure.boxNumbers.length > 0 ? (
+              <div className="pl-6 border-l-4 border-blue-600/60">
+                <div className="flex flex-wrap gap-2">
+                  {procedure.boxNumbers.map((boxNumber, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="pl-3 pr-1.5 py-1.5 flex items-center gap-1.5 hover:bg-secondary/80 transition-colors"
+                    >
+                      <span className="text-sm">{boxNumber}</span>
+                      <button
+                        onClick={() => onRemoveBox(index)}
+                        className="ml-1 hover:bg-destructive/20 rounded-full p-0.5 transition-colors"
+                        title="Remove box number"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="pl-6 border-l-4 border-blue-600/60 py-4 text-center text-sm text-muted-foreground">
+                No box numbers added. Add box numbers below.
+              </div>
+            )}
+
+            {/* Add Box Number */}
+            <div className="relative pl-6 border-l-4 border-blue-600/60 pt-3 pb-2 border-2 border-blue-600/40 rounded-lg bg-blue-50/30 p-4 overflow-visible">
+              <label className="text-xs font-semibold text-blue-900 mb-2 block">Add Box Number</label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter box number..."
+                  value={newBoxNumber}
+                  onChange={(e) => setNewBoxNumber(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (newBoxNumber.trim()) {
+                        onAddBox(newBoxNumber.trim());
+                        setNewBoxNumber('');
+                      }
+                    }
+                  }}
+                  className="flex-1 h-9 border-2 border-blue-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-300"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    if (newBoxNumber.trim()) {
+                      onAddBox(newBoxNumber.trim());
+                      setNewBoxNumber('');
+                    }
+                  }}
+                  disabled={!newBoxNumber.trim()}
+                  className="h-9 border-2 border-blue-500 hover:border-blue-600"
+                  title="Add box number"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>

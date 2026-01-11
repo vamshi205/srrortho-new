@@ -13,6 +13,8 @@ interface SummaryItem {
   name: string;
   sizes: { size: string; qty: number }[];
   procedure: string;
+  location?: { room: string; rack: string; box: string } | null;
+  isSelectable: boolean;
 }
 
 export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
@@ -20,9 +22,10 @@ export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
     const summaryData = useMemo(() => {
       const items: SummaryItem[] = [];
       const instruments = new Set<string>();
+      const allBoxNumbers: string[] = [];
 
       activeProcedures.forEach((procedure) => {
-        // Process selected items
+        // Process selected items (selectable items)
         procedure.selectedItems.forEach((item, itemName) => {
           const displayName =
             materialType !== 'None' ? `${materialType} ${itemName}` : itemName;
@@ -33,6 +36,8 @@ export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
               qty: parseInt(sq.qty) || 1,
             })),
             procedure: procedure.name,
+            location: procedure.itemLocationMapping?.[itemName] || null,
+            isSelectable: true,
           });
         });
 
@@ -47,15 +52,22 @@ export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
               name: displayName,
               sizes: [{ size: '', qty: parseInt(editedQty) || 1 }],
               procedure: procedure.name,
+              location: procedure.fixedItemLocationMapping?.[fixedItem.name] || null,
+              isSelectable: false,
             });
           }
         });
 
         // Collect instruments
         procedure.instruments.forEach((inst) => instruments.add(inst));
+        
+        // Collect box numbers
+        if (procedure.boxNumbers && procedure.boxNumbers.length > 0) {
+          allBoxNumbers.push(...procedure.boxNumbers);
+        }
       });
 
-      return { items, instruments: Array.from(instruments) };
+      return { items, instruments: Array.from(instruments), boxNumbers: allBoxNumbers };
     }, [activeProcedures, materialType]);
 
     const totalItems = summaryData.items.reduce(
@@ -131,50 +143,51 @@ export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
                 <tr className="border-b-[2px] border-border/80 bg-muted/30">
                   <th className="text-left p-3 text-xs font-semibold text-muted-foreground">Item Name</th>
                   <th className="text-left p-3 text-xs font-semibold text-muted-foreground">Procedure</th>
-                  <th className="text-center p-3 text-xs font-semibold text-muted-foreground">Size</th>
                   <th className="text-center p-3 text-xs font-semibold text-muted-foreground">Qty</th>
+                  <th className="text-left p-3 text-xs font-semibold text-muted-foreground">Location</th>
                 </tr>
               </thead>
               <tbody>
                 {summaryData.items.map((item, index) => {
-                  const hasSizes = item.sizes.length > 0 && item.sizes[0].size;
                   const totalQty = item.sizes.reduce((a, s) => a + s.qty, 0);
+                  const hasSizes = item.isSelectable && item.sizes.length > 0 && item.sizes.some(s => s.size);
                   
-                  if (hasSizes) {
-                    // Render each size/qty as a separate row
-                    return item.sizes.map((s, sizeIndex) => (
-                      <tr 
-                        key={`${item.name}-${index}-${sizeIndex}`} 
-                        className="border-b-[1px] border-border/50 hover:bg-muted/20 transition-colors"
-                      >
-                        {sizeIndex === 0 ? (
-                          <>
-                            <td className="p-3 text-sm font-medium align-top" rowSpan={item.sizes.length}>
-                              {item.name}
-                            </td>
-                            <td className="p-3 text-xs text-muted-foreground align-top" rowSpan={item.sizes.length}>
-                              {item.procedure}
-                            </td>
-                          </>
-                        ) : null}
-                        <td className="p-3 text-sm text-center">{s.size || '-'}</td>
-                        <td className="p-3 text-sm font-semibold text-center">{s.qty}</td>
-                      </tr>
-                    ));
-                  } else {
-                    // Single row for items without sizes
-                    return (
-                      <tr 
-                        key={`${item.name}-${index}`} 
-                        className="border-b-[1px] border-border/50 hover:bg-muted/20 transition-colors"
-                      >
-                        <td className="p-3 text-sm font-medium">{item.name}</td>
-                        <td className="p-3 text-xs text-muted-foreground">{item.procedure}</td>
-                        <td className="p-3 text-sm text-center">-</td>
-                        <td className="p-3 text-sm font-semibold text-center">{totalQty}</td>
-                      </tr>
-                    );
-                  }
+                  // Build size details text for selectable items
+                  const sizeDetails = hasSizes 
+                    ? item.sizes
+                        .filter(s => s.size)
+                        .map(s => `${s.size} (Qty: ${s.qty})`)
+                        .join(', ')
+                    : '';
+                  
+                  return (
+                    <tr 
+                      key={`${item.name}-${index}`} 
+                      className="border-b-[1px] border-border/50 hover:bg-muted/20 transition-colors"
+                    >
+                      <td className="p-3 text-sm font-medium">
+                        <div>
+                          <div>{item.name}</div>
+                          {hasSizes && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {sizeDetails}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-3 text-xs text-muted-foreground">{item.procedure}</td>
+                      <td className="p-3 text-sm font-semibold text-center">{totalQty}</td>
+                      <td className="p-3 text-xs text-muted-foreground">
+                        {item.location ? (
+                          <span>
+                            R:{item.location.room || '-'} Rack:{item.location.rack || '-'} Box:{item.location.box || '-'}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
                 })}
               </tbody>
             </table>
@@ -197,6 +210,25 @@ export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
                   {instrument}
                 </span>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Box Numbers */}
+        {summaryData.boxNumbers && summaryData.boxNumbers.length > 0 && (
+          <div className="rounded-xl border-[3px] border-border/80 overflow-hidden">
+            <div className="p-3 bg-muted/50 border-b-[3px] border-border/80 flex items-center gap-2">
+              <Package className="w-4 h-4 text-primary" />
+              <h3 className="font-medium">Box Numbers</h3>
+            </div>
+            <div className="p-3">
+              <ul className="list-disc list-inside space-y-1">
+                {summaryData.boxNumbers.map((boxNumber, index) => (
+                  <li key={index} className="text-sm">
+                    {boxNumber}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         )}

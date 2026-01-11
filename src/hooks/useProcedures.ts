@@ -37,8 +37,8 @@ export function useProcedures() {
       .filter((row) => row[0]?.trim()) // Filter rows with a procedure name
       .map((row) => {
         // Parse columns directly from array (matching implant-checklist format)
-        // [name, items, fixedItems, fixedQty, instruments, type, instrumentImages, fixedItemImages, itemImages]
-        const [name, items, fixedItems, fixedQty, instruments, type, instrumentImages, fixedItemImages, itemImages] = row;
+        // [name, items, fixedItems, fixedQty, instruments, type, instrumentImages, fixedItemImages, itemImages, itemLocations, fixedItemLocations, instrumentLocations]
+        const [name, items, fixedItems, fixedQty, instruments, type, instrumentImages, fixedItemImages, itemImages, itemLocations, fixedItemLocations, instrumentLocations] = row;
         
         // Parse fixed items and qtys strictly by | only
         const fixedItemsArr = fixedItems ? fixedItems.split('|').map(s => s.trim()).filter(Boolean) : [];
@@ -71,6 +71,31 @@ export function useProcedures() {
           ? itemImages.split('|').map(url => url.trim()).filter(Boolean) 
           : [];
         
+        // Parse locations - format: Room1|Rack2|Box3|Room4|Rack5|Box6
+        const parseLocations = (locationString: string | undefined): Array<{ room: string; rack: string; box: string } | null> => {
+          if (!locationString) return [];
+          const parts = locationString.split('|').map(p => p.trim()).filter(Boolean);
+          const locations: Array<{ room: string; rack: string; box: string } | null> = [];
+          // Each location is 3 parts: Room, Rack, Box
+          for (let i = 0; i < parts.length; i += 3) {
+            if (i + 2 < parts.length) {
+              locations.push({
+                room: parts[i] || '',
+                rack: parts[i + 1] || '',
+                box: parts[i + 2] || '',
+              });
+            } else {
+              // Incomplete location, push null
+              locations.push(null);
+            }
+          }
+          return locations;
+        };
+        
+        const itemLocationsArr = parseLocations(itemLocations);
+        const fixedItemLocationsArr = parseLocations(fixedItemLocations);
+        const instrumentLocationsArr = parseLocations(instrumentLocations);
+        
         // Create instrument-image mapping for this procedure
         const instrumentImageMapping: Record<string, string | null> = {};
         instrumentsArr.forEach((inst, idx) => {
@@ -91,6 +116,24 @@ export function useProcedures() {
           itemImageMapping[itemName] = itemImagesArr[idx] || itemImageMap[itemName] || null;
         });
         
+        // Create location mappings
+        const instrumentLocationMapping: Record<string, { room: string; rack: string; box: string } | null> = {};
+        instrumentsArr.forEach((inst, idx) => {
+          instrumentLocationMapping[inst] = instrumentLocationsArr[idx] || null;
+        });
+        
+        const fixedItemLocationMapping: Record<string, { room: string; rack: string; box: string } | null> = {};
+        fixedItemsArr.forEach((item, idx) => {
+          fixedItemLocationMapping[item] = fixedItemLocationsArr[idx] || null;
+        });
+        
+        const itemLocationMapping: Record<string, { room: string; rack: string; box: string } | null> = {};
+        editableItems.forEach((item, idx) => {
+          // Extract item name without size/qty pattern for matching
+          const itemName = item.match(/^(.+?)\s*\{/)?.[1]?.trim() || item.trim();
+          itemLocationMapping[itemName] = itemLocationsArr[idx] || null;
+        });
+        
         return {
           name: name.trim(),
           items: editableItems,
@@ -100,6 +143,9 @@ export function useProcedures() {
           instrumentImageMapping,
           fixedItemImageMapping,
           itemImageMapping,
+          instrumentLocationMapping,
+          fixedItemLocationMapping,
+          itemLocationMapping,
         };
       });
   }, []);

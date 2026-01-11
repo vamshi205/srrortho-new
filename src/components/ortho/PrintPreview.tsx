@@ -13,6 +13,8 @@ interface PrintItem {
   description: string;
   qty: number;
   procedure: string;
+  location?: { room: string; rack: string; box: string } | null;
+  isSelectable: boolean;
 }
 
 export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
@@ -21,31 +23,7 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
       const items: PrintItem[] = [];
 
       activeProcedures.forEach((procedure) => {
-        // Selected items with sizes
-        procedure.selectedItems.forEach((item, itemName) => {
-          const displayName =
-            materialType !== 'None' ? `${materialType} ${itemName}` : itemName;
-
-          item.sizeQty.forEach((sq) => {
-            items.push({
-              name: displayName,
-              description: sq.size ? `Size: ${sq.size}` : '',
-              qty: parseInt(sq.qty) || 1,
-              procedure: procedure.name,
-            });
-          });
-
-          if (item.sizeQty.length === 0) {
-            items.push({
-              name: displayName,
-              description: '',
-              qty: 1,
-              procedure: procedure.name,
-            });
-          }
-        });
-
-        // Fixed items
+        // Fixed items first
         procedure.fixedItems.forEach((fixedItem) => {
           const isSelected = procedure.selectedFixedItems.get(fixedItem.name) ?? true;
           if (isSelected) {
@@ -57,8 +35,35 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
               description: '',
               qty: parseInt(editedQty) || 1,
               procedure: procedure.name,
+              location: procedure.fixedItemLocationMapping?.[fixedItem.name] || null,
+              isSelectable: false,
             });
           }
+        });
+
+        // Selected items (selectable items) - combine all sizes into one item
+        procedure.selectedItems.forEach((item, itemName) => {
+          const displayName =
+            materialType !== 'None' ? `${materialType} ${itemName}` : itemName;
+
+          // Build size details string
+          const sizeDetails = item.sizeQty
+            .filter(sq => sq.size)
+            .map(sq => `${sq.size} (Qty: ${sq.qty})`)
+            .join(', ');
+
+          const totalQty = item.sizeQty.length > 0
+            ? item.sizeQty.reduce((sum, sq) => sum + (parseInt(sq.qty) || 1), 0)
+            : 1;
+
+          items.push({
+            name: displayName,
+            description: sizeDetails,
+            qty: totalQty,
+            procedure: procedure.name,
+            location: procedure.itemLocationMapping?.[itemName] || null,
+            isSelectable: true,
+          });
         });
       });
 
@@ -69,6 +74,16 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
       const instruments = new Set<string>();
       activeProcedures.forEach((p) => p.instruments.forEach((i) => instruments.add(i)));
       return Array.from(instruments);
+    }, [activeProcedures]);
+
+    const allBoxNumbers = useMemo(() => {
+      const boxNumbers: string[] = [];
+      activeProcedures.forEach((p) => {
+        if (p.boxNumbers && p.boxNumbers.length > 0) {
+          boxNumbers.push(...p.boxNumbers);
+        }
+      });
+      return boxNumbers;
     }, [activeProcedures]);
 
     const today = new Date().toLocaleDateString('en-IN', {
@@ -123,7 +138,6 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
             <tr className="bg-gray-100">
               <th className="border border-black p-1 text-left w-8" style={{ pageBreakInside: 'avoid' }}>S.No</th>
               <th className="border border-black p-1 text-left" style={{ pageBreakInside: 'avoid' }}>Item Description</th>
-              <th className="border border-black p-1 text-left w-24" style={{ pageBreakInside: 'avoid' }}>Size/Details</th>
               <th className="border border-black p-1 text-center w-10" style={{ pageBreakInside: 'avoid' }}>Qty</th>
             </tr>
           </thead>
@@ -131,8 +145,16 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
             {printItems.map((item, index) => (
               <tr key={index} style={{ pageBreakInside: 'avoid' }}>
                 <td className="border border-black p-1 text-center">{index + 1}</td>
-                <td className="border border-black p-1">{item.name}</td>
-                <td className="border border-black p-1">{item.description}</td>
+                <td className="border border-black p-1">
+                  <div>
+                    <div>{item.name}</div>
+                    {item.isSelectable && item.description && (
+                      <div className="text-[9px] text-gray-600 mt-0.5">
+                        {item.description}
+                      </div>
+                    )}
+                  </div>
+                </td>
                 <td className="border border-black p-1 text-center font-semibold">
                   {item.qty}
                 </td>
@@ -153,6 +175,14 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
           <div className="mb-1.5" style={{ pageBreakInside: 'avoid' }}>
             <h3 className="font-bold mb-0.5 text-[10px]">Instruments Required:</h3>
             <p className="text-[10px]">{allInstruments.join(', ')}</p>
+          </div>
+        )}
+
+        {/* Box Numbers */}
+        {allBoxNumbers.length > 0 && (
+          <div className="mb-1.5" style={{ pageBreakInside: 'avoid' }}>
+            <h3 className="font-bold mb-0.5 text-[10px]">Box Numbers:</h3>
+            <p className="text-[10px]">{allBoxNumbers.join(', ')}</p>
           </div>
         )}
 

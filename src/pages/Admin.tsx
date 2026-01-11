@@ -26,7 +26,7 @@ const Admin = () => {
               <div>
                 <h1 className="text-lg sm:text-xl font-display font-semibold">Admin Panel</h1>
                 <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-                  Add new procedures with items and instruments
+                  Add new procedures or edit existing ones with items and instruments
                 </p>
               </div>
             </div>
