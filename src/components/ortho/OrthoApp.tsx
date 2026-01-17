@@ -1035,17 +1035,17 @@ export default function OrthoApp() {
                 )}
               </>
             ) : (
-              <div className="rounded-xl border border-border/60 bg-card/70 backdrop-blur-md p-4 sm:p-5 space-y-4 min-w-0 shadow-sm">
-                <div className="flex items-start justify-between gap-3">
+              <div className="rounded-xl border border-border/60 bg-card/70 backdrop-blur-md p-3 sm:p-5 space-y-4 min-w-0 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div>
                     <h2 className="font-display font-semibold text-base sm:text-lg">Manual DC</h2>
                     <div className="text-xs text-muted-foreground">
-                      Add items/instruments/boxes manually (all selectable, no fixed items)
+                      Add items/instruments/boxes manually
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Select value={manualMaterialType} onValueChange={setManualMaterialType}>
-                      <SelectTrigger className="h-9 w-[140px] text-xs bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600">
+                      <SelectTrigger className="h-8 sm:h-9 w-[100px] sm:w-[140px] text-xs bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1057,43 +1057,43 @@ export default function OrthoApp() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 border-2 border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800"
+                      className="gap-1.5 sm:gap-2 h-8 sm:h-9 text-xs border-2 border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800"
                       onClick={handleClearManualEntry}
                     >
-                      <Trash2 className="w-4 h-4" /> Clear All
+                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden xs:inline">Clear</span><span className="xs:hidden">×</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 border-border/70 bg-background/70"
+                      className="gap-1.5 sm:gap-2 h-8 sm:h-9 text-xs border-border/70 bg-background/70"
                       onClick={() => {
                         setDcMode('procedure');
                         setInitialFilterType('All');
                         setShowProcedureSelector(true);
                       }}
                     >
-                      <Plus className="w-4 h-4" /> Procedure List
+                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Procedure List</span><span className="sm:hidden">Proc</span>
                     </Button>
                   </div>
                 </div>
 
                 {/* Items */}
-                <div className="rounded-xl border border-border/60 bg-background/70 p-3 sm:p-4 space-y-3 border-l-4 border-l-blue-600/40">
-                  <div className="flex items-center justify-between">
+                <div className="rounded-xl border border-border/60 bg-background/70 p-2.5 sm:p-4 space-y-3 border-l-4 border-l-blue-600/40">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-xs font-semibold">
                           Items
                         </span>
-                        <span className="text-xs text-muted-foreground">Search → select → add</span>
+                        <span className="text-xs text-muted-foreground hidden sm:inline">Search → select → add</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">Search, select, then add size/qty</div>
                     </div>
-                    <div className="text-xs text-muted-foreground">{manualItems.length} added</div>
+                    <div className="text-xs text-muted-foreground font-medium">{manualItems.length} added</div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_90px_120px] gap-2 items-end">
+                  <div className="space-y-2">
+                    {/* Item search */}
                     <div className="relative">
-                      <Label>Item</Label>
+                      <Label className="text-xs">Item</Label>
                       <div className="relative mt-1">
                         <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
@@ -1188,63 +1188,64 @@ export default function OrthoApp() {
                         </div>
                       )}
                     </div>
-                    <div>
-                      <Label>Size</Label>
-                      <Input
-                        value={manualItemSize}
-                        onChange={(e) => setManualItemSize(e.target.value)}
-                        placeholder="Optional"
-                        className="mt-1 h-9 bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600"
-                      />
+                    {/* Size, Qty, and Add button in a row */}
+                    <div className="grid grid-cols-[1fr_80px_auto] gap-2 items-end">
+                      <div>
+                        <Label className="text-xs">Size</Label>
+                        <Input
+                          value={manualItemSize}
+                          onChange={(e) => setManualItemSize(e.target.value)}
+                          placeholder="Optional"
+                          className="mt-1 h-9 bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Qty</Label>
+                        <Input
+                          type="number"
+                          value={manualItemQty}
+                          onChange={(e) => setManualItemQty(e.target.value)}
+                          min="1"
+                          className="mt-1 h-9 bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          const name = manualItemName.trim();
+                          const qtyNum = Math.max(1, parseInt(manualItemQty || '1', 10) || 1);
+                          if (!name) {
+                            toast({ title: 'Item is required' });
+                            return;
+                          }
+                          setManualItems((prev) => [...prev, { name, size: manualItemSize.trim(), qty: qtyNum }]);
+                          setManualItemName('');
+                          setManualItemQuery('');
+                          setManualItemSize('');
+                          setManualItemQty('1');
+                        }}
+                        className="h-9 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm"
+                      >
+                        <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add</span>
+                      </Button>
                     </div>
-                    <div>
-                      <Label>Qty</Label>
-                      <Input
-                        type="number"
-                        value={manualItemQty}
-                        onChange={(e) => setManualItemQty(e.target.value)}
-                        min="1"
-                        className="mt-1 h-9 bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        const name = manualItemName.trim();
-                        const qtyNum = Math.max(1, parseInt(manualItemQty || '1', 10) || 1);
-                        if (!name) {
-                          toast({ title: 'Item is required' });
-                          return;
-                        }
-                        setManualItems((prev) => [...prev, { name, size: manualItemSize.trim(), qty: qtyNum }]);
-                        setManualItemName('');
-                        setManualItemQuery('');
-                        setManualItemSize('');
-                        setManualItemQty('1');
-                      }}
-                      className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <Plus className="w-4 h-4" /> Add Item
-                    </Button>
                   </div>
 
                   {manualItems.length > 0 && (
                     <div className="rounded-lg border border-border/60 overflow-hidden bg-background/80">
-                      <div className="grid grid-cols-[1fr_140px_90px_44px] gap-2 px-3 py-2 text-[11px] font-semibold bg-muted/30 border-b border-border/60">
-                        <div>Item</div>
-                        <div>Size</div>
-                        <div className="text-right">Qty</div>
-                        <div />
-                      </div>
-                      <div className="divide-y">
+                      {/* Mobile view */}
+                      <div className="sm:hidden divide-y divide-border/60">
                         {manualItems.map((it, idx) => (
-                          <div key={`${it.name}-${idx}`} className="grid grid-cols-[1fr_140px_90px_44px] gap-2 px-3 py-2 text-sm">
-                            <div className="truncate">{it.name}</div>
-                            <div className="truncate text-muted-foreground">{it.size || '-'}</div>
-                            <div className="text-right font-semibold">{it.qty}</div>
+                          <div key={`${it.name}-${idx}`} className="p-2.5 flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium truncate">{it.name}</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                Size: {it.size || '-'} • Qty: <span className="font-semibold text-foreground">{it.qty}</span>
+                              </div>
+                            </div>
                             <button
                               type="button"
-                              className="text-muted-foreground hover:text-destructive flex items-center justify-center"
+                              className="text-muted-foreground hover:text-destructive flex-shrink-0 p-1"
                               onClick={() => setManualItems((prev) => prev.filter((_, i) => i !== idx))}
                               title="Remove item"
                             >
@@ -1253,26 +1254,49 @@ export default function OrthoApp() {
                           </div>
                         ))}
                       </div>
+                      {/* Desktop view */}
+                      <div className="hidden sm:block">
+                        <div className="grid grid-cols-[1fr_120px_70px_40px] gap-2 px-3 py-2 text-[11px] font-semibold bg-muted/30 border-b border-border/60">
+                          <div>Item</div>
+                          <div>Size</div>
+                          <div className="text-right">Qty</div>
+                          <div />
+                        </div>
+                        <div className="divide-y divide-border/60">
+                          {manualItems.map((it, idx) => (
+                            <div key={`${it.name}-${idx}`} className="grid grid-cols-[1fr_120px_70px_40px] gap-2 px-3 py-2 text-sm">
+                              <div className="truncate">{it.name}</div>
+                              <div className="truncate text-muted-foreground">{it.size || '-'}</div>
+                              <div className="text-right font-semibold">{it.qty}</div>
+                              <button
+                                type="button"
+                                className="text-muted-foreground hover:text-destructive flex items-center justify-center"
+                                onClick={() => setManualItems((prev) => prev.filter((_, i) => i !== idx))}
+                                title="Remove item"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
 
                 {/* Instruments */}
-                <div className="rounded-xl border border-border/60 bg-background/70 p-3 sm:p-4 space-y-3 border-l-4 border-l-indigo-600/40">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 text-xs font-semibold">
-                          Instruments
-                        </span>
-                        <span className="text-xs text-muted-foreground">Pick with procedure badge</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">Search instruments (shows procedure badge)</div>
+                <div className="rounded-xl border border-border/60 bg-background/70 p-2.5 sm:p-4 space-y-3 border-l-4 border-l-indigo-600/40">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 text-xs font-semibold">
+                        Instruments
+                      </span>
+                      <span className="text-xs text-muted-foreground hidden sm:inline">Pick with procedure badge</span>
                     </div>
-                    <div className="text-xs text-muted-foreground">{manualInstruments.length} added</div>
+                    <div className="text-xs text-muted-foreground font-medium">{manualInstruments.length} added</div>
                   </div>
                   <div className="relative">
-                    <Label>Instrument</Label>
+                    <Label className="text-xs">Instrument</Label>
                     <div className="relative mt-1">
                       <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
@@ -1337,7 +1361,7 @@ export default function OrthoApp() {
                             type="button"
                             role="option"
                             aria-selected={idx === manualInstrumentActiveIndex}
-                            className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                            className={`w-full text-left px-2.5 sm:px-3 py-2 text-sm transition-colors ${
                               idx === manualInstrumentActiveIndex ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
                             }`}
                             onMouseDown={(e) => {
@@ -1349,12 +1373,12 @@ export default function OrthoApp() {
                           >
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2 min-w-0">
-                                <span className={`h-1.5 w-1.5 rounded-full ${idx === manualInstrumentActiveIndex ? 'bg-white' : 'bg-blue-300'}`} />
-                                <div className="font-medium truncate">{s.instrument}</div>
+                                <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${idx === manualInstrumentActiveIndex ? 'bg-white' : 'bg-blue-300'}`} />
+                                <div className="font-medium truncate text-xs sm:text-sm">{s.instrument}</div>
                               </div>
                               <Badge
                                 variant="secondary"
-                                className={`h-5 px-1.5 text-[10px] shrink-0 ${
+                                className={`h-5 px-1.5 text-[9px] sm:text-[10px] shrink-0 ${
                                   idx === manualInstrumentActiveIndex ? 'bg-white/15 text-white border-white/20' : ''
                                 }`}
                               >
@@ -1385,30 +1409,35 @@ export default function OrthoApp() {
                 </div>
 
                 {/* Box Numbers */}
-                <div className="rounded-xl border border-border/60 bg-background/70 p-3 sm:p-4 space-y-3 border-l-4 border-l-green-600/40">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center rounded-full bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 text-xs font-semibold">
-                          Box Numbers
-                        </span>
-                        <span className="text-xs text-muted-foreground">Optional</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">Add one or more box numbers</div>
+                <div className="rounded-xl border border-border/60 bg-background/70 p-2.5 sm:p-4 space-y-3 border-l-4 border-l-green-600/40">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-full bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 text-xs font-semibold">
+                        Box Numbers
+                      </span>
+                      <span className="text-xs text-muted-foreground">Optional</span>
                     </div>
-                    <div className="text-xs text-muted-foreground">{manualBoxNumbers.length} added</div>
+                    <div className="text-xs text-muted-foreground font-medium">{manualBoxNumbers.length} added</div>
                   </div>
                   <div className="flex gap-2">
                     <Input
                       value={manualBoxInput}
                       onChange={(e) => setManualBoxInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const trimmed = manualBoxInput.trim();
+                          if (!trimmed) return;
+                          setManualBoxNumbers((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
+                          setManualBoxInput('');
+                        }
+                      }}
                       placeholder="Enter box number"
-                      className="h-9 bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600"
+                      className="flex-1 h-9 bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600"
                     />
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-9 border-2 border-green-700 bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                      className="h-9 px-3 sm:px-4 border-2 border-green-700 bg-green-600 text-white hover:bg-green-700 hover:text-white"
                       onClick={() => {
                         const trimmed = manualBoxInput.trim();
                         if (!trimmed) return;

@@ -724,58 +724,58 @@ const SavedDcs = () => {
           <div className="space-y-8">
         {/* Dashboard Metrics */}
         {savedDcs.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="glass-card border-2 border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Total DCs</p>
-                    <p className="text-3xl font-bold text-blue-700">{dashboardMetrics.totalDcs}</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+            <Card className="glass-card border border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
+              <CardContent className="p-3 sm:p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-sm font-medium text-slate-600">Total DCs</p>
+                    <p className="text-xl sm:text-3xl font-bold text-blue-700">{dashboardMetrics.totalDcs}</p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-blue-700" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card border-2 border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Pending</p>
-                    <p className="text-3xl font-bold text-red-600">{dashboardMetrics.pendingDcs}</p>
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center">
-                    <AlertCircle className="w-6 h-6 text-red-600" />
+                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-4 h-4 sm:w-6 sm:h-6 text-blue-700" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="glass-card border-2 border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Avg. Turnaround</p>
-                    <p className="text-3xl font-bold text-green-700">{dashboardMetrics.avgTurnaround}d</p>
+            <Card className="glass-card border border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
+              <CardContent className="p-3 sm:p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-sm font-medium text-slate-600">Pending</p>
+                    <p className="text-xl sm:text-3xl font-bold text-red-600">{dashboardMetrics.pendingDcs}</p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-green-50 border border-green-200 flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-green-700" />
+                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-4 h-4 sm:w-6 sm:h-6 text-red-600" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="glass-card border-2 border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Items Out</p>
-                    <p className="text-3xl font-bold text-indigo-700">{dashboardMetrics.totalItemsOut}</p>
+            <Card className="glass-card border border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
+              <CardContent className="p-3 sm:p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-sm font-medium text-slate-600">Avg. Turn</p>
+                    <p className="text-xl sm:text-3xl font-bold text-green-700">{dashboardMetrics.avgTurnaround}d</p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center">
-                    <Package className="w-6 h-6 text-indigo-700" />
+                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-green-50 border border-green-200 flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-green-700" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card border border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
+              <CardContent className="p-3 sm:p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-sm font-medium text-slate-600">Items Out</p>
+                    <p className="text-xl sm:text-3xl font-bold text-indigo-700">{dashboardMetrics.totalItemsOut}</p>
+                  </div>
+                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center flex-shrink-0">
+                    <Package className="w-4 h-4 sm:w-6 sm:h-6 text-indigo-700" />
                   </div>
                 </div>
               </CardContent>
@@ -792,186 +792,183 @@ const SavedDcs = () => {
           </Card>
         ) : (
           <Card className="glass-card rounded-xl border-2 border-border/60 shadow-md">
-            <CardHeader className="p-4 space-y-4">
+            <CardHeader className="p-3 sm:p-4 space-y-3 sm:space-y-4">
               {/* Modern Filters */}
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Quick Actions Bar */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/10 border border-border/50">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Filter className="h-5 w-5 text-primary" />
-                      <span className="font-semibold text-sm">Quick Filters</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant={quickFilter === "all" ? "default" : "ghost"}
-                        onClick={() => setQuickFilter("all")}
-                        className="rounded-full"
-                      >
-                        All Time
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={quickFilter === "today" ? "default" : "ghost"}
-                        onClick={() => setQuickFilter("today")}
-                        className="rounded-full"
-                      >
-                        Today
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={quickFilter === "week" ? "default" : "ghost"}
-                        onClick={() => setQuickFilter("week")}
-                        className="rounded-full"
-                      >
-                        This Week
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={quickFilter === "month" ? "default" : "ghost"}
-                        onClick={() => setQuickFilter("month")}
-                        className="rounded-full"
-                      >
-                        This Month
-                      </Button>
-                      {activeQueue === "pending" && (
-                        <Button
-                          size="sm"
-                          variant={quickFilter === "overdue" ? "destructive" : "ghost"}
-                          onClick={() => setQuickFilter("overdue")}
-                          className="rounded-full"
-                        >
-                          Overdue (7+ days)
-                        </Button>
-                      )}
-                    </div>
+                <div className="flex flex-col gap-3 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/10 border border-border/50">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    <span className="font-semibold text-xs sm:text-sm">Quick Filters</span>
                   </div>
-
-                  <div className="flex items-center gap-3" />
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                    <Button
+                      size="sm"
+                      variant={quickFilter === "all" ? "default" : "ghost"}
+                      onClick={() => setQuickFilter("all")}
+                      className="rounded-full h-7 sm:h-8 text-xs px-2.5 sm:px-3"
+                    >
+                      All
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={quickFilter === "today" ? "default" : "ghost"}
+                      onClick={() => setQuickFilter("today")}
+                      className="rounded-full h-7 sm:h-8 text-xs px-2.5 sm:px-3"
+                    >
+                      Today
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={quickFilter === "week" ? "default" : "ghost"}
+                      onClick={() => setQuickFilter("week")}
+                      className="rounded-full h-7 sm:h-8 text-xs px-2.5 sm:px-3"
+                    >
+                      Week
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={quickFilter === "month" ? "default" : "ghost"}
+                      onClick={() => setQuickFilter("month")}
+                      className="rounded-full h-7 sm:h-8 text-xs px-2.5 sm:px-3"
+                    >
+                      Month
+                    </Button>
+                    {activeQueue === "pending" && (
+                      <Button
+                        size="sm"
+                        variant={quickFilter === "overdue" ? "destructive" : "ghost"}
+                        onClick={() => setQuickFilter("overdue")}
+                        className="rounded-full h-7 sm:h-8 text-xs px-2.5 sm:px-3"
+                      >
+                        Overdue
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Advanced Filters */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-700 flex items-center gap-2">
-                      <Search className="h-3.5 w-3.5 text-slate-600" />
-                      Search Party/DC
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="space-y-1.5 sm:col-span-1">
+                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
+                      <Search className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-600" />
+                      Search
                     </label>
                     <Input
                       value={filterText}
                       onChange={(e) => setFilterText(e.target.value)}
-                      placeholder="Enter party name or DC number..."
-                      className="h-9 border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500"
+                      placeholder="Party or DC no..."
+                      className="h-8 sm:h-9 text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-700 flex items-center gap-2">
-                      <Calendar className="h-3.5 w-3.5 text-slate-600" />
-                      From Date
-                    </label>
-                    <Input
-                      type="date"
-                      value={dateFrom}
-                      onChange={(e) => setDateFrom(e.target.value)}
-                      className="h-9 border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:col-span-2">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
+                        <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-600" />
+                        From
+                      </label>
+                      <Input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="h-8 sm:h-9 text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-700 flex items-center gap-2">
-                      <Calendar className="h-3.5 w-3.5 text-slate-600" />
-                      To Date
-                    </label>
-                    <Input
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      className="h-9 border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500"
-                    />
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
+                        <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-600" />
+                        To
+                      </label>
+                      <Input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="h-8 sm:h-9 text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
-
                 </div>
 
                 {(filterText || dateFrom || dateTo || quickFilter !== "all") && (
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-4 rounded-xl bg-slate-50 border-2 border-slate-200">
-                    <span className="text-sm font-medium text-slate-800">Active filters:</span>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col gap-2 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-xs font-medium text-slate-600 mr-1">Filters:</span>
                       {filterText && (
-                        <Badge variant="default" className="gap-1 bg-slate-100 text-slate-800 border-slate-300">
-                          <Search className="h-3 w-3" />
-                          Search: {filterText}
+                        <Badge variant="default" className="gap-1 bg-slate-100 text-slate-700 border-slate-300 text-[10px] sm:text-xs h-6">
+                          <Search className="h-2.5 w-2.5" />
+                          <span className="truncate max-w-[80px] sm:max-w-none">{filterText}</span>
                           <X
-                            className="h-3 w-3 cursor-pointer hover:text-red-600"
+                            className="h-3 w-3 cursor-pointer hover:text-red-600 flex-shrink-0"
                             onClick={() => setFilterText("")}
                           />
                         </Badge>
                       )}
                       {dateFrom && (
-                        <Badge variant="default" className="gap-1 bg-slate-100 text-slate-800 border-slate-300">
-                          <Calendar className="h-3 w-3" />
-                          From: {formatDate(dateFrom)}
+                        <Badge variant="default" className="gap-1 bg-slate-100 text-slate-700 border-slate-300 text-[10px] sm:text-xs h-6">
+                          <Calendar className="h-2.5 w-2.5" />
+                          {formatDate(dateFrom)}
                           <X
-                            className="h-3 w-3 cursor-pointer hover:text-red-600"
+                            className="h-3 w-3 cursor-pointer hover:text-red-600 flex-shrink-0"
                             onClick={() => setDateFrom("")}
                           />
                         </Badge>
                       )}
                       {dateTo && (
-                        <Badge variant="default" className="gap-1 bg-slate-100 text-slate-800 border-slate-300">
-                          <Calendar className="h-3 w-3" />
-                          To: {formatDate(dateTo)}
+                        <Badge variant="default" className="gap-1 bg-slate-100 text-slate-700 border-slate-300 text-[10px] sm:text-xs h-6">
+                          <Calendar className="h-2.5 w-2.5" />
+                          {formatDate(dateTo)}
                           <X
-                            className="h-3 w-3 cursor-pointer hover:text-red-600"
+                            className="h-3 w-3 cursor-pointer hover:text-red-600 flex-shrink-0"
                             onClick={() => setDateTo("")}
                           />
                         </Badge>
                       )}
                       {quickFilter !== "all" && (
-                        <Badge variant="default" className="gap-1 bg-slate-100 text-slate-800 border-slate-300">
-                          <Filter className="h-3 w-3" />
+                        <Badge variant="default" className="gap-1 bg-slate-100 text-slate-700 border-slate-300 text-[10px] sm:text-xs h-6">
+                          <Filter className="h-2.5 w-2.5" />
                           {quickFilter === "today" ? "Today" :
-                           quickFilter === "week" ? "This Week" :
-                           quickFilter === "month" ? "This Month" :
+                           quickFilter === "week" ? "Week" :
+                           quickFilter === "month" ? "Month" :
                            quickFilter === "overdue" ? "Overdue" : quickFilter}
                           <X
-                            className="h-3 w-3 cursor-pointer hover:text-red-600"
+                            className="h-3 w-3 cursor-pointer hover:text-red-600 flex-shrink-0"
                             onClick={() => setQuickFilter("all")}
                           />
                         </Badge>
                       )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setFilterText("");
+                          setDateFrom("");
+                          setDateTo("");
+                          setQuickFilter("all");
+                        }}
+                        className="h-6 text-[10px] sm:text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2 ml-auto"
+                      >
+                        Clear
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setFilterText("");
-                        setDateFrom("");
-                        setDateTo("");
-                        setQuickFilter("all");
-                      }}
-                      className="w-full sm:w-auto sm:ml-auto text-xs border-red-300 text-red-700 hover:bg-red-50"
-                    >
-                      Clear All
-                    </Button>
                   </div>
                 )}
               </div>
 
               {/* Queue Tabs */}
               <Tabs value={activeQueue} onValueChange={(value) => setActiveQueue(value as SavedDcStatus)}>
-                <TabsList className="grid grid-cols-2 sm:grid-cols-4 gap-1 bg-muted/30 border border-border/50 h-auto sm:h-12 p-1 rounded-xl">
+                <TabsList className="grid grid-cols-4 gap-0.5 sm:gap-1 bg-muted/30 border border-border/50 h-auto p-0.5 sm:p-1 rounded-xl">
                   <TabsTrigger
                     value="pending"
-                    className="gap-2 relative rounded-lg text-xs sm:text-sm py-2 data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground transition-all"
+                    className="gap-1 sm:gap-2 relative rounded-lg text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground transition-all"
                   >
-                    <AlertCircle className="h-4 w-4" />
-                    <span className="font-medium">Pending</span>
+                    <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="font-medium hidden xs:inline">Pending</span>
                     {statusCounts.pending > 0 && (
                       <Badge
                         variant="destructive"
-                        className="ml-1 h-5 min-w-5 flex items-center justify-center text-xs px-1"
+                        className="h-4 sm:h-5 min-w-4 sm:min-w-5 flex items-center justify-center text-[9px] sm:text-xs px-0.5 sm:px-1"
                       >
                         {statusCounts.pending > 99 ? '99+' : statusCounts.pending}
                       </Badge>
@@ -979,14 +976,14 @@ const SavedDcs = () => {
                   </TabsTrigger>
                   <TabsTrigger
                     value="returned"
-                    className="gap-2 relative rounded-lg text-xs sm:text-sm py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+                    className="gap-1 sm:gap-2 relative rounded-lg text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
                   >
-                    <User className="h-4 w-4" />
-                    <span className="font-medium">Returned</span>
+                    <User className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="font-medium hidden xs:inline">Returned</span>
                     {statusCounts.returned > 0 && (
                       <Badge
                         variant="default"
-                        className="ml-1 h-5 min-w-5 flex items-center justify-center text-xs px-1"
+                        className="h-4 sm:h-5 min-w-4 sm:min-w-5 flex items-center justify-center text-[9px] sm:text-xs px-0.5 sm:px-1"
                       >
                         {statusCounts.returned > 99 ? '99+' : statusCounts.returned}
                       </Badge>
@@ -994,14 +991,14 @@ const SavedDcs = () => {
                   </TabsTrigger>
                   <TabsTrigger
                     value="completed"
-                    className="gap-2 relative rounded-lg text-xs sm:text-sm py-2 data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all"
+                    className="gap-1 sm:gap-2 relative rounded-lg text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all"
                   >
-                    <Receipt className="h-4 w-4" />
-                    <span className="font-medium">Completed</span>
+                    <Receipt className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="font-medium hidden xs:inline">Done</span>
                     {statusCounts.completed > 0 && (
                       <Badge
                         variant="secondary"
-                        className="ml-1 h-5 min-w-5 flex items-center justify-center text-xs px-1"
+                        className="h-4 sm:h-5 min-w-4 sm:min-w-5 flex items-center justify-center text-[9px] sm:text-xs px-0.5 sm:px-1"
                       >
                         {statusCounts.completed > 99 ? '99+' : statusCounts.completed}
                       </Badge>
@@ -1009,14 +1006,14 @@ const SavedDcs = () => {
                   </TabsTrigger>
                   <TabsTrigger
                     value="cash"
-                    className="gap-2 relative rounded-lg text-xs sm:text-sm py-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
+                    className="gap-1 sm:gap-2 relative rounded-lg text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
                   >
-                    <Wallet className="h-4 w-4" />
-                    <span className="font-medium">Cash</span>
+                    <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="font-medium hidden xs:inline">Cash</span>
                     {statusCounts.cash > 0 && (
                       <Badge
                         variant="outline"
-                        className="ml-1 h-5 min-w-5 flex items-center justify-center text-xs px-1"
+                        className="h-4 sm:h-5 min-w-4 sm:min-w-5 flex items-center justify-center text-[9px] sm:text-xs px-0.5 sm:px-1"
                       >
                         {statusCounts.cash > 99 ? '99+' : statusCounts.cash}
                       </Badge>
@@ -1028,17 +1025,17 @@ const SavedDcs = () => {
 
             <CardContent className="p-0">
               {selectedDc && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 px-4 py-3 border-t-2 border-slate-200 bg-slate-50">
-                  <div className="text-sm">
+                <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2 sm:py-3 border-t-2 border-slate-200 bg-slate-50">
+                  <div className="text-xs sm:text-sm min-w-0 flex-1">
                     <span className="text-slate-600">Selected:</span>{" "}
                     <span className="font-semibold text-blue-700">{selectedDc.dcNo}</span>{" "}
-                    <span className="text-slate-500">•</span>{" "}
-                    <span className="font-medium text-slate-800">{selectedDc.hospitalName}</span>
+                    <span className="text-slate-500 hidden sm:inline">•</span>{" "}
+                    <span className="font-medium text-slate-800 hidden sm:inline truncate">{selectedDc.hospitalName}</span>
                   </div>
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0 hover:bg-slate-200 self-end sm:self-auto"
+                    className="h-7 w-7 sm:h-8 sm:w-8 p-0 hover:bg-slate-200 flex-shrink-0"
                     onClick={() => setSelectedDcId(null)}
                     title="Clear selection"
                   >
@@ -1049,15 +1046,16 @@ const SavedDcs = () => {
               {/* DC Table */}
               <div className="border-t-2 border-border/60">
                 {filteredDcs.length === 0 ? (
-                  <div className="p-12 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
-                      <FileText className="h-8 w-8 text-muted-foreground" />
+                  <div className="p-8 sm:p-12 text-center">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
+                      <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">No DCs found</h3>
-                    <p className="text-muted-foreground mb-4">No delivery challans match your current filters.</p>
+                    <h3 className="text-base sm:text-lg font-semibold mb-2">No DCs found</h3>
+                    <p className="text-sm text-muted-foreground mb-4">No delivery challans match your current filters.</p>
                     {(filterText || dateFrom || dateTo || quickFilter !== "all") && (
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={() => {
                           setFilterText("");
                           setDateFrom("");
@@ -1070,150 +1068,76 @@ const SavedDcs = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="border-2 border-slate-300 rounded-lg overflow-hidden">
-                    <div className="max-h-[55vh] sm:max-h-[60vh] overflow-y-auto overflow-x-auto md:overflow-x-hidden">
-                      <table className="w-full min-w-[980px] md:min-w-0 border-separate border-spacing-0">
-                      <thead>
-                        <tr className="bg-slate-100 border-b-2 border-slate-300 sticky top-0 z-10">
-                          <th className="text-center p-2 sm:p-4 text-sm font-bold text-slate-700 w-[60px] border-r-2 border-slate-300">
-                            Select
-                          </th>
-                          <th className="text-left p-2 sm:p-4 text-sm font-bold text-slate-700 w-[120px] border-r-2 border-slate-300">
-                            <SortableHeader sortKey="date">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              Date
-                            </SortableHeader>
-                          </th>
-                          <th className="text-left p-2 sm:p-4 text-sm font-bold text-slate-700 w-[120px] border-r-2 border-slate-300">
-                            <SortableHeader sortKey="dcNo">
-                              DC No
-                            </SortableHeader>
-                          </th>
-                          <th className="text-left p-2 sm:p-4 text-sm font-bold text-slate-700 border-r-2 border-slate-300">
-                            <SortableHeader sortKey="party">
-                              Party Name
-                            </SortableHeader>
-                          </th>
-                          <th className="text-center p-2 sm:p-4 text-sm font-bold text-slate-700 w-[100px] border-r-2 border-slate-300">
-                            <SortableHeader sortKey="items">
-                              <Package className="h-4 w-4 mr-1" />
-                              Items
-                            </SortableHeader>
-                          </th>
-                          <th className="text-center p-2 sm:p-4 text-sm font-bold text-slate-700 w-[100px] border-r-2 border-slate-300">
-                            <SortableHeader sortKey="days">
-                              Days
-                            </SortableHeader>
-                          </th>
-                          <th className="text-center p-2 sm:p-4 text-sm font-bold text-slate-700 w-[120px] border-r-2 border-slate-300">
-                            <SortableHeader sortKey="status">
-                              Status
-                            </SortableHeader>
-                          </th>
-                          <th className="text-center p-2 sm:p-4 text-sm font-bold text-slate-700 w-[120px]">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredDcs.map((dc) => {
-                          const daysPending = getDaysPending(dc);
-                          const totalQty = getTotalQty(dc);
-                          return (
-                            <tr
-                              key={dc.id}
-                              className={`border-b-2 transition-all duration-200 ${
-                                selectedDcId === dc.id
-                                  ? 'bg-gradient-to-r from-blue-100 to-blue-50 border-blue-300 shadow-md ring-1 ring-blue-200'
-                                  : 'border-slate-200 hover:bg-slate-50'
-                              }`}
-                              onClick={() => {
-                                setSelectedDcId(dc.id);
-                              }}
-                            >
-                              <td className="p-2 sm:p-4 text-center border-r-2 border-slate-200">
-                                <input
-                                  type="radio"
-                                  name="selected-dc"
-                                  className="h-4 w-4 accent-blue-600 cursor-pointer"
-                                  checked={selectedDcId === dc.id}
-                                  onChange={() => setSelectedDcId(dc.id)}
-                                  aria-label={`Select DC ${dc.dcNo}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                              </td>
-                              <td className="p-2 sm:p-4 border-r-2 border-slate-200">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                  <>
+                    {/* Mobile Card View */}
+                    <div className="md:hidden divide-y divide-slate-200">
+                      {filteredDcs.map((dc) => {
+                        const daysPending = getDaysPending(dc);
+                        const totalQty = getTotalQty(dc);
+                        const isSelected = selectedDcId === dc.id;
+                        return (
+                          <div
+                            key={dc.id}
+                            className={`p-3 transition-all ${
+                              isSelected
+                                ? 'bg-blue-50 border-l-4 border-l-blue-500'
+                                : 'bg-white border-l-4 border-l-transparent'
+                            }`}
+                            onClick={() => setSelectedDcId(dc.id)}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedDcId(dc.id);
                                       setDetailsDialogOpen(true);
                                     }}
-                                    className="text-sm font-medium hover:text-blue-700 transition-colors text-left"
+                                    className="font-semibold text-blue-700 hover:underline text-sm"
                                   >
-                                    {formatDate(getDisplayDate(dc))}
+                                    {dc.dcNo}
                                   </button>
-                                </div>
-                              </td>
-                              <td className="p-2 sm:p-4 border-r-2 border-slate-200">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedDcId(dc.id);
-                                    setDetailsDialogOpen(true);
-                                  }}
-                                  className="text-sm font-semibold text-blue-700 hover:underline transition-colors"
-                                >
-                                  {dc.dcNo}
-                                </button>
-                              </td>
-                              <td className="p-2 sm:p-4 border-r-2 border-slate-200">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedDcId(dc.id);
-                                    setDetailsDialogOpen(true);
-                                  }}
-                                  className="text-sm hover:text-blue-700 transition-colors text-left max-w-[160px] sm:max-w-48 truncate"
-                                >
-                                  {dc.hospitalName}
-                                </button>
-                              </td>
-                              <td className="p-2 sm:p-4 text-center border-r-2 border-slate-200">
-                                <div className="flex items-center justify-center gap-1">
-                                  <Package className="h-3.5 w-3.5 text-slate-400" />
-                                  <Badge variant="outline" className="text-xs font-medium border-slate-300">
-                                    {totalQty}
-                                  </Badge>
-                                </div>
-                              </td>
-                              <td className="p-2 sm:p-4 text-center border-r-2 border-slate-200">
-                                <div className={`text-sm font-medium ${daysPending > 7 && dc.status === 'pending' ? 'text-red-600' : 'text-slate-600'}`}>
-                                  {daysPending}d
-                                  {daysPending > 7 && dc.status === 'pending' && (
-                                    <AlertCircle className="h-3 w-3 inline ml-1" />
-                                  )}
-                                </div>
-                              </td>
-                              <td className="p-2 sm:p-4 border-r-2 border-slate-200">
-                                <div className="flex justify-center">
-                                  <Badge className={`${getStatusBadgeClass(dc.status)} flex items-center gap-1.5 text-xs font-medium border px-2 py-1`}>
+                                  <Badge className={`${getStatusBadgeClass(dc.status)} flex items-center gap-1 text-[10px] font-medium border px-1.5 py-0.5`}>
                                     {getStatusIcon(dc.status)}
                                     {dc.status.charAt(0).toUpperCase() + dc.status.slice(1)}
                                   </Badge>
                                 </div>
-                              </td>
-                              <td className="p-2 sm:p-4 text-center">
+                                <div className="text-sm font-medium text-slate-800 mt-1 truncate">
+                                  {dc.hospitalName}
+                                </div>
+                                <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {formatDate(getDisplayDate(dc))}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Package className="h-3 w-3" />
+                                    {totalQty} items
+                                  </span>
+                                  <span className={`flex items-center gap-1 ${daysPending > 7 && dc.status === 'pending' ? 'text-red-600 font-medium' : ''}`}>
+                                    {daysPending}d
+                                    {daysPending > 7 && dc.status === 'pending' && (
+                                      <AlertCircle className="h-3 w-3" />
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="radio"
+                                  name="selected-dc-mobile"
+                                  className="h-4 w-4 accent-blue-600 cursor-pointer"
+                                  checked={isSelected}
+                                  onChange={() => setSelectedDcId(dc.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      className="h-8 w-8 p-0 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                      disabled={!selectedDcId || selectedDcId !== dc.id}
-                                      title="Actions"
+                                      className="h-8 w-8 p-0"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       <Edit className="h-4 w-4 text-slate-600" />
@@ -1221,26 +1145,20 @@ const SavedDcs = () => {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="w-48">
                                     <DropdownMenuItem
-                      onClick={() => {
-                        setSelectedDcId(dc.id);
-                        setDetailsDialogOpen(true);
-                      }}
+                                      onClick={() => {
+                                        setSelectedDcId(dc.id);
+                                        setDetailsDialogOpen(true);
+                                      }}
                                       className="gap-2"
                                     >
                                       <Eye className="h-4 w-4" />
                                       View Details
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handlePrint(dc)}
-                                      className="gap-2"
-                                    >
+                                    <DropdownMenuItem onClick={() => handlePrint(dc)} className="gap-2">
                                       <Printer className="h-4 w-4" />
                                       Print DC
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleShare(dc)}
-                                      className="gap-2"
-                                    >
+                                    <DropdownMenuItem onClick={() => handleShare(dc)} className="gap-2">
                                       <Share2 className="h-4 w-4" />
                                       Share PDF
                                     </DropdownMenuItem>
@@ -1278,16 +1196,13 @@ const SavedDcs = () => {
                                     {dc.status === "returned" && (
                                       <DropdownMenuItem onClick={() => cancelReturnToPending(dc)} className="gap-2">
                                         <Undo2 className="h-4 w-4" />
-                                        Cancel Return (Back to Pending)
+                                        Cancel Return
                                       </DropdownMenuItem>
                                     )}
                                     {dc.status === "cash" && (
-                                      <DropdownMenuItem
-                                        onClick={() => openActionDialog("invoice", dc)}
-                                        className="gap-2"
-                                      >
+                                      <DropdownMenuItem onClick={() => openActionDialog("invoice", dc)} className="gap-2">
                                         <Receipt className="h-4 w-4" />
-                                        Link Invoice (Move to Completed)
+                                        Link Invoice
                                       </DropdownMenuItem>
                                     )}
                                     <DropdownMenuSeparator />
@@ -1297,14 +1212,249 @@ const SavedDcs = () => {
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
+
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block border-2 border-slate-300 rounded-lg overflow-hidden">
+                      <div className="max-h-[60vh] overflow-y-auto">
+                        <table className="w-full border-separate border-spacing-0">
+                        <thead>
+                          <tr className="bg-slate-100 border-b-2 border-slate-300 sticky top-0 z-10">
+                            <th className="text-center p-3 text-sm font-bold text-slate-700 w-[50px] border-r-2 border-slate-300">
+                              Select
+                            </th>
+                            <th className="text-left p-3 text-sm font-bold text-slate-700 w-[110px] border-r-2 border-slate-300">
+                              <SortableHeader sortKey="date">
+                                <Calendar className="h-4 w-4 mr-1" />
+                                Date
+                              </SortableHeader>
+                            </th>
+                            <th className="text-left p-3 text-sm font-bold text-slate-700 w-[100px] border-r-2 border-slate-300">
+                              <SortableHeader sortKey="dcNo">
+                                DC No
+                              </SortableHeader>
+                            </th>
+                            <th className="text-left p-3 text-sm font-bold text-slate-700 border-r-2 border-slate-300">
+                              <SortableHeader sortKey="party">
+                                Party Name
+                              </SortableHeader>
+                            </th>
+                            <th className="text-center p-3 text-sm font-bold text-slate-700 w-[80px] border-r-2 border-slate-300">
+                              <SortableHeader sortKey="items">
+                                <Package className="h-4 w-4 mr-1" />
+                                Items
+                              </SortableHeader>
+                            </th>
+                            <th className="text-center p-3 text-sm font-bold text-slate-700 w-[70px] border-r-2 border-slate-300">
+                              <SortableHeader sortKey="days">
+                                Days
+                              </SortableHeader>
+                            </th>
+                            <th className="text-center p-3 text-sm font-bold text-slate-700 w-[100px] border-r-2 border-slate-300">
+                              <SortableHeader sortKey="status">
+                                Status
+                              </SortableHeader>
+                            </th>
+                            <th className="text-center p-3 text-sm font-bold text-slate-700 w-[60px]">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredDcs.map((dc) => {
+                            const daysPending = getDaysPending(dc);
+                            const totalQty = getTotalQty(dc);
+                            return (
+                              <tr
+                                key={dc.id}
+                                className={`border-b-2 transition-all duration-200 ${
+                                  selectedDcId === dc.id
+                                    ? 'bg-gradient-to-r from-blue-100 to-blue-50 border-blue-300 shadow-md ring-1 ring-blue-200'
+                                    : 'border-slate-200 hover:bg-slate-50'
+                                }`}
+                                onClick={() => {
+                                  setSelectedDcId(dc.id);
+                                }}
+                              >
+                                <td className="p-3 text-center border-r-2 border-slate-200">
+                                  <input
+                                    type="radio"
+                                    name="selected-dc"
+                                    className="h-4 w-4 accent-blue-600 cursor-pointer"
+                                    checked={selectedDcId === dc.id}
+                                    onChange={() => setSelectedDcId(dc.id)}
+                                    aria-label={`Select DC ${dc.dcNo}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                </td>
+                                <td className="p-3 border-r-2 border-slate-200">
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedDcId(dc.id);
+                                        setDetailsDialogOpen(true);
+                                      }}
+                                      className="text-sm font-medium hover:text-blue-700 transition-colors text-left"
+                                    >
+                                      {formatDate(getDisplayDate(dc))}
+                                    </button>
+                                  </div>
+                                </td>
+                                <td className="p-3 border-r-2 border-slate-200">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedDcId(dc.id);
+                                      setDetailsDialogOpen(true);
+                                    }}
+                                    className="text-sm font-semibold text-blue-700 hover:underline transition-colors"
+                                  >
+                                    {dc.dcNo}
+                                  </button>
+                                </td>
+                                <td className="p-3 border-r-2 border-slate-200">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedDcId(dc.id);
+                                      setDetailsDialogOpen(true);
+                                    }}
+                                    className="text-sm hover:text-blue-700 transition-colors text-left max-w-48 truncate"
+                                  >
+                                    {dc.hospitalName}
+                                  </button>
+                                </td>
+                                <td className="p-3 text-center border-r-2 border-slate-200">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Badge variant="outline" className="text-xs font-medium border-slate-300">
+                                      {totalQty}
+                                    </Badge>
+                                  </div>
+                                </td>
+                                <td className="p-3 text-center border-r-2 border-slate-200">
+                                  <div className={`text-sm font-medium ${daysPending > 7 && dc.status === 'pending' ? 'text-red-600' : 'text-slate-600'}`}>
+                                    {daysPending}d
+                                    {daysPending > 7 && dc.status === 'pending' && (
+                                      <AlertCircle className="h-3 w-3 inline ml-1" />
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-3 border-r-2 border-slate-200">
+                                  <div className="flex justify-center">
+                                    <Badge className={`${getStatusBadgeClass(dc.status)} flex items-center gap-1 text-xs font-medium border px-1.5 py-0.5`}>
+                                      {getStatusIcon(dc.status)}
+                                      {dc.status.charAt(0).toUpperCase() + dc.status.slice(1)}
+                                    </Badge>
+                                  </div>
+                                </td>
+                                <td className="p-3 text-center">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-8 w-8 p-0 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={!selectedDcId || selectedDcId !== dc.id}
+                                        title="Actions"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Edit className="h-4 w-4 text-slate-600" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48">
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setSelectedDcId(dc.id);
+                                          setDetailsDialogOpen(true);
+                                        }}
+                                        className="gap-2"
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                        View Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => handlePrint(dc)}
+                                        className="gap-2"
+                                      >
+                                        <Printer className="h-4 w-4" />
+                                        Print DC
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => handleShare(dc)}
+                                        className="gap-2"
+                                      >
+                                        <Share2 className="h-4 w-4" />
+                                        Share PDF
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={() => openActionDialog("return", dc)}
+                                        disabled={dc.status !== "pending"}
+                                        className="gap-2"
+                                      >
+                                        <User className="h-4 w-4" />
+                                        Mark as Returned
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => openActionDialog("invoice", dc)}
+                                        disabled={dc.status !== "returned"}
+                                        className="gap-2"
+                                      >
+                                        <Receipt className="h-4 w-4" />
+                                        Link Invoice
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => openActionDialog("cash", dc)}
+                                        disabled={dc.status !== "returned"}
+                                        className="gap-2"
+                                      >
+                                        <Wallet className="h-4 w-4" />
+                                        Move to Cash
+                                      </DropdownMenuItem>
+                                      {dc.status === "completed" && (
+                                        <DropdownMenuItem onClick={() => moveBackToReturned(dc)} className="gap-2">
+                                          <Undo2 className="h-4 w-4" />
+                                          Move back to Returned
+                                        </DropdownMenuItem>
+                                      )}
+                                      {dc.status === "returned" && (
+                                        <DropdownMenuItem onClick={() => cancelReturnToPending(dc)} className="gap-2">
+                                          <Undo2 className="h-4 w-4" />
+                                          Cancel Return (Back to Pending)
+                                        </DropdownMenuItem>
+                                      )}
+                                      {dc.status === "cash" && (
+                                        <DropdownMenuItem
+                                          onClick={() => openActionDialog("invoice", dc)}
+                                          className="gap-2"
+                                        >
+                                          <Receipt className="h-4 w-4" />
+                                          Link Invoice (Move to Completed)
+                                        </DropdownMenuItem>
+                                      )}
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => requestDelete(dc)} className="text-destructive gap-2">
+                                        <X className="h-4 w-4" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -1519,16 +1669,16 @@ const SavedDcs = () => {
 
                 <TabsContent value="overview" className="mt-3 space-y-3">
                   {/* Tracking + actions (courier-tracking style) */}
-                  <div className="rounded-md border border-slate-200 bg-white p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="rounded-md border border-slate-200 bg-white p-2.5 sm:p-3">
+                    <div className="space-y-3">
                       <div className="min-w-0">
                         <div className="text-xs font-semibold text-slate-700">Tracking</div>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-600">
+                        <div className="mt-2 text-xs text-slate-600">
                           {(() => {
                             const step1Done = true;
                             const step2Done = selectedDc.status !== "pending";
                             const step3Done = selectedDc.status === "completed" || selectedDc.status === "cash";
-                            const step3Label = selectedDc.status === "cash" ? "Cash" : "Completed";
+                            const step3Label = selectedDc.status === "cash" ? "Cash" : "Done";
                             const dot = (done: boolean, active: boolean) =>
                               done
                                 ? "bg-blue-600 border-blue-600"
@@ -1537,59 +1687,59 @@ const SavedDcs = () => {
                                   : "bg-white border-slate-300";
                             const line = (done: boolean) => (done ? "bg-blue-600" : "bg-slate-200");
                             return (
-                              <div className="flex items-center gap-2 w-full">
-                                <div className="flex items-center gap-2">
-                                  <span className={`h-2.5 w-2.5 rounded-full border ${dot(step1Done, selectedDc.status === "pending")}`} />
-                                  <span className="font-medium text-slate-800">Created</span>
+                              <div className="flex items-center gap-1.5 sm:gap-2 w-full">
+                                <div className="flex items-center gap-1 sm:gap-2">
+                                  <span className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full border flex-shrink-0 ${dot(step1Done, selectedDc.status === "pending")}`} />
+                                  <span className="font-medium text-slate-800 text-[10px] sm:text-xs">Created</span>
                                 </div>
                                 <div className={`h-0.5 flex-1 rounded ${line(step2Done)}`} />
-                                <div className="flex items-center gap-2">
-                                  <span className={`h-2.5 w-2.5 rounded-full border ${dot(step2Done, selectedDc.status === "returned")}`} />
-                                  <span className="font-medium text-slate-800">Returned</span>
+                                <div className="flex items-center gap-1 sm:gap-2">
+                                  <span className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full border flex-shrink-0 ${dot(step2Done, selectedDc.status === "returned")}`} />
+                                  <span className="font-medium text-slate-800 text-[10px] sm:text-xs">Return</span>
                                 </div>
                                 <div className={`h-0.5 flex-1 rounded ${line(step3Done)}`} />
-                                <div className="flex items-center gap-2">
-                                  <span className={`h-2.5 w-2.5 rounded-full border ${dot(step3Done, selectedDc.status === "completed" || selectedDc.status === "cash")}`} />
-                                  <span className="font-medium text-slate-800">{step3Label}</span>
+                                <div className="flex items-center gap-1 sm:gap-2">
+                                  <span className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full border flex-shrink-0 ${dot(step3Done, selectedDc.status === "completed" || selectedDc.status === "cash")}`} />
+                                  <span className="font-medium text-slate-800 text-[10px] sm:text-xs">{step3Label}</span>
                                 </div>
                               </div>
                             );
                           })()}
                         </div>
-                        <div className="mt-2 text-xs text-slate-600">
-                          Created: <span className="font-medium text-slate-800">{formatDateTime(selectedDc.savedAt)}</span>
-                          <span className="mx-2 text-slate-300">|</span>
-                          Returned: <span className="font-medium text-slate-800">{selectedDc.returnedAt ? formatDateTime(selectedDc.returnedAt) : "-"}</span>
+                        <div className="mt-2 text-[10px] sm:text-xs text-slate-600">
+                          <span className="block sm:inline">Created: <span className="font-medium text-slate-800">{formatDateTime(selectedDc.savedAt)}</span></span>
+                          <span className="hidden sm:inline mx-2 text-slate-300">|</span>
+                          <span className="block sm:inline mt-0.5 sm:mt-0">Returned: <span className="font-medium text-slate-800">{selectedDc.returnedAt ? formatDateTime(selectedDc.returnedAt) : "-"}</span></span>
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="gap-2 border-indigo-300 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800"
+                          className="gap-1 sm:gap-2 h-7 sm:h-8 text-xs border-indigo-300 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800"
                           disabled={selectedDc.status !== "pending"}
                           onClick={() => openActionDialog("return", selectedDc)}
                         >
-                          <User className="h-4 w-4" /> Return
-                        </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-2 border-green-300 text-green-700 hover:bg-green-50 hover:text-green-800"
-                      disabled={selectedDc.status !== "returned" && selectedDc.status !== "cash"}
-                      onClick={() => openActionDialog("invoice", selectedDc)}
-                    >
-                          <Receipt className="h-4 w-4" /> Link Invoice
+                          <User className="h-3 w-3 sm:h-4 sm:w-4" /> Return
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                          className="gap-1 sm:gap-2 h-7 sm:h-8 text-xs border-green-300 text-green-700 hover:bg-green-50 hover:text-green-800"
+                          disabled={selectedDc.status !== "returned" && selectedDc.status !== "cash"}
+                          onClick={() => openActionDialog("invoice", selectedDc)}
+                        >
+                          <Receipt className="h-3 w-3 sm:h-4 sm:w-4" /> Invoice
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1 sm:gap-2 h-7 sm:h-8 text-xs border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
                           disabled={selectedDc.status !== "returned"}
                           onClick={() => openActionDialog("cash", selectedDc)}
                         >
-                          <Wallet className="h-4 w-4" /> Cash
+                          <Wallet className="h-3 w-3 sm:h-4 sm:w-4" /> Cash
                         </Button>
                       </div>
                     </div>
