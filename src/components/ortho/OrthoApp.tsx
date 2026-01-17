@@ -623,14 +623,30 @@ export default function OrthoApp() {
     return { items, instruments: Array.from(instruments), boxNumbers };
   }, [activeProcedures, manualItems, manualInstruments, manualBoxNumbers, manualMaterialType]);
 
-  const handleSaveDc = useCallback(() => {
+  const handleClearManualEntry = useCallback(() => {
+    setManualItems([]);
+    setManualInstruments([]);
+    setManualBoxNumbers([]);
+    setManualItemQuery('');
+    setManualItemName('');
+    setManualItemSize('');
+    setManualItemQty('1');
+    setManualInstrumentQuery('');
+    setManualBoxInput('');
+    setHospitalName('');
+    setDcNo('');
+    setReceivedBy('');
+    setRemarks('');
+  }, []);
+
+  const handleSaveDc = useCallback((): boolean => {
     if (!hospitalName || !dcNo || !receivedBy) {
       setShowSettingsModal(true);
-      return;
+      return false;
     }
     if (activeProcedures.length === 0 && manualItems.length === 0 && manualInstruments.length === 0 && manualBoxNumbers.length === 0) {
       toast({ title: 'Nothing to save', description: 'Add procedures or use Manual DC to add items/instruments.' });
-      return;
+      return false;
     }
     const { items, instruments, boxNumbers } = buildSavePayload();
     const dcMaterialType = (() => {
@@ -654,23 +670,20 @@ export default function OrthoApp() {
     });
     toast({ title: 'DC saved', description: `${hospitalName} · ${dcNo}` });
     setRecentSavedDcs(loadSavedDcs().slice(0, 6));
-  }, [activeProcedures, buildSavePayload, dcNo, hospitalName, manualItems.length, manualInstruments.length, manualBoxNumbers.length, manualMaterialType, receivedBy, remarks, toast]);
 
-  const handleClearManualEntry = useCallback(() => {
-    setManualItems([]);
-    setManualInstruments([]);
-    setManualBoxNumbers([]);
-    setManualItemQuery('');
-    setManualItemName('');
-    setManualItemSize('');
-    setManualItemQty('1');
-    setManualInstrumentQuery('');
-    setManualBoxInput('');
-    setHospitalName('');
-    setDcNo('');
-    setReceivedBy('');
-    setRemarks('');
-  }, []);
+    // After saving: close modal and reset to default procedure list
+    setShowSettingsModal(false);
+    setShowPrintModal(false);
+    setDcMode('procedure');
+    setActiveProcedures([]);
+    setCollapsedProcedures(new Set());
+    setInitialFilterType('None');
+    setShowProcedureSelector(true);
+    setManualMaterialType('SS');
+    handleClearManualEntry();
+
+    return true;
+  }, [activeProcedures, buildSavePayload, dcNo, handleClearManualEntry, hospitalName, manualBoxNumbers.length, manualInstruments.length, manualItems.length, manualMaterialType, receivedBy, remarks, toast]);
 
   const handleSavePDF = async () => {
     if (!printRef.current) return;
@@ -1429,7 +1442,14 @@ export default function OrthoApp() {
             <div><Label>Received By</Label><Input value={receivedBy} onChange={(e) => setReceivedBy(e.target.value)} placeholder="Enter receiver name" className="mt-1" /></div>
             <div><Label>Remarks</Label><Input value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Add remarks (optional)" className="mt-1" /></div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button onClick={handleSaveDc} className="w-full sm:flex-1">Save DC</Button>
+              <Button
+                onClick={() => {
+                  handleSaveDc();
+                }}
+                className="w-full sm:flex-1"
+              >
+                Save DC
+              </Button>
               <Button onClick={() => {
                 if (hospitalName && dcNo) {
                   setShowSettingsModal(false);
