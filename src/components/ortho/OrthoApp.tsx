@@ -699,7 +699,7 @@ export default function OrthoApp() {
 
       // Navigate to Saved DC List
       setTimeout(() => {
-        navigate('/saved-dcs');
+        navigate('/saved');
       }, 500); // Small delay to let user see the success toast
 
       return true;
