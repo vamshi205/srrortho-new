@@ -6,7 +6,7 @@ const SHEET_NAME = 'Sheet1'; // Change if your sheet has a different name
 
 // Option 1: Using Google Apps Script (Recommended - No API key needed)
 // You need to create a Google Apps Script web app first
-const APPS_SCRIPT_URL = ''; // Add your Google Apps Script web app URL here
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyN_KzlP_8LXP3-MwRNZ-byziqK4Qd5VIKTkZL-3fyD0PDOLjojzQ3RFKWce9QYqoYH/exec'; // Add your Google Apps Script web app URL here
 
 // Option 2: Using Google Sheets API (Requires API key and OAuth)
 const API_KEY = ''; // Add your Google Sheets API key here

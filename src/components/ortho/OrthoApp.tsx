@@ -39,7 +39,9 @@ export default function OrthoApp() {
   const [showProcedureSelector, setShowProcedureSelector] = useState(false);
   const [initialFilterType, setInitialFilterType] = useState<string>('None');
   const [showSummaryMobile, setShowSummaryMobile] = useState(false);
-  const [recentSavedDcs, setRecentSavedDcs] = useState(() => loadSavedDcs().slice(0, 6));
+  const [recentSavedDcs, setRecentSavedDcs] = useState<any[]>([]);
+  const [isSavingDc, setIsSavingDc] = useState(false);
+  const [showConfirmSaveDialog, setShowConfirmSaveDialog] = useState(false);
 
   // Manual DC builder
   const [dcMode, setDcMode] = useState<'procedure' | 'manual'>('procedure');
@@ -63,6 +65,10 @@ export default function OrthoApp() {
   // Ensure no procedures are selected on mount and after login
   useEffect(() => {
     setActiveProcedures([]);
+    // Load recent saved DCs on mount
+    loadSavedDcs().then(dcs => setRecentSavedDcs(dcs.slice(0, 6))).catch(err => {
+      console.error('Failed to load recent DCs:', err);
+    });
   }, []);
 
   // Clear procedures and show selector with "None" filter when user logs in
@@ -640,7 +646,7 @@ export default function OrthoApp() {
     setRemarks('');
   }, []);
 
-  const handleSaveDc = useCallback((): boolean => {
+  const handleSaveDc = useCallback(async (): Promise<boolean> => {
     if (!hospitalName || !dcNo || !receivedBy) {
       setShowSettingsModal(true);
       return false;
@@ -649,41 +655,65 @@ export default function OrthoApp() {
       toast({ title: 'Nothing to save', description: 'Add procedures or use Manual DC to add items/instruments.' });
       return false;
     }
-    const { items, instruments, boxNumbers } = buildSavePayload();
-    const dcMaterialType = (() => {
-      const types = new Set<string>();
-      activeProcedures.forEach((p) => types.add(p.materialType || 'SS'));
-      if (manualItems.length > 0) types.add(manualMaterialType || 'SS');
-      const arr = Array.from(types);
-      if (arr.length === 0) return 'SS';
-      if (arr.length === 1) return arr[0];
-      return 'Mixed';
-    })();
-    saveSavedDc({
-      hospitalName,
-      dcNo,
-      materialType: dcMaterialType,
-      receivedBy,
-      remarks,
-      items,
-      instruments,
-      boxNumbers,
-    });
-    toast({ title: 'DC saved', description: `${hospitalName} · ${dcNo}` });
-    setRecentSavedDcs(loadSavedDcs().slice(0, 6));
 
-    // After saving: close modal and reset to default procedure list
-    setShowSettingsModal(false);
-    setShowPrintModal(false);
-    setDcMode('procedure');
-    setActiveProcedures([]);
-    setCollapsedProcedures(new Set());
-    setInitialFilterType('None');
-    setShowProcedureSelector(true);
-    setManualMaterialType('SS');
-    handleClearManualEntry();
+    setIsSavingDc(true);
+    try {
+      const { items, instruments, boxNumbers } = buildSavePayload();
+      const dcMaterialType = (() => {
+        const types = new Set<string>();
+        activeProcedures.forEach((p) => types.add(p.materialType || 'SS'));
+        if (manualItems.length > 0) types.add(manualMaterialType || 'SS');
+        const arr = Array.from(types);
+        if (arr.length === 0) return 'SS';
+        if (arr.length === 1) return arr[0];
+        return 'Mixed';
+      })();
+      
+      await saveSavedDc({
+        hospitalName,
+        dcNo,
+        materialType: dcMaterialType,
+        receivedBy,
+        remarks,
+        items,
+        instruments,
+        boxNumbers,
+      });
+      
+      toast({ title: 'DC saved successfully', description: `${hospitalName} · ${dcNo}` });
+      
+      // Reload recent DCs
+      const dcs = await loadSavedDcs();
+      setRecentSavedDcs(dcs.slice(0, 6));
 
-    return true;
+      // After saving: close modal and reset to default procedure list
+      setShowSettingsModal(false);
+      setShowPrintModal(false);
+      setDcMode('procedure');
+      setActiveProcedures([]);
+      setCollapsedProcedures(new Set());
+      setInitialFilterType('None');
+      setShowProcedureSelector(true);
+      setManualMaterialType('SS');
+      handleClearManualEntry();
+
+      // Navigate to Saved DC List
+      setTimeout(() => {
+        navigate('/saved-dcs');
+      }, 500); // Small delay to let user see the success toast
+
+      return true;
+    } catch (error) {
+      console.error('Error saving DC:', error);
+      toast({ 
+        title: 'Error saving DC', 
+        description: error instanceof Error ? error.message : 'Failed to save DC to Google Sheets',
+        variant: 'destructive'
+      });
+      return false;
+    } finally {
+      setIsSavingDc(false);
+    }
   }, [activeProcedures, buildSavePayload, dcNo, handleClearManualEntry, hospitalName, manualBoxNumbers.length, manualInstruments.length, manualItems.length, manualMaterialType, receivedBy, remarks, toast]);
 
   const handleSavePDF = async () => {
@@ -1493,8 +1523,28 @@ export default function OrthoApp() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Button onClick={() => setShowSettingsModal(true)} className="w-full sm:flex-1 gap-2">
-                    <Save className="w-4 h-4" /> Save DC
+                  <Button 
+                    onClick={() => {
+                      if (!hospitalName || !dcNo || !receivedBy) {
+                        setShowSettingsModal(true);
+                      } else {
+                        setShowConfirmSaveDialog(true);
+                      }
+                    }} 
+                    className="w-full sm:flex-1 gap-2" 
+                    disabled={isSavingDc}
+                  >
+                    {isSavingDc ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Save DC
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -1563,19 +1613,133 @@ export default function OrthoApp() {
             <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={() => {
-                  handleSaveDc();
+                  if (!hospitalName || !dcNo || !receivedBy) {
+                    toast({ 
+                      title: 'Missing information', 
+                      description: 'Please fill in all required fields',
+                      variant: 'destructive'
+                    });
+                    return;
+                  }
+                  setShowSettingsModal(false);
+                  setShowConfirmSaveDialog(true);
                 }}
-                className="w-full sm:flex-1"
+                className="w-full sm:flex-1 gap-2"
+                disabled={isSavingDc}
               >
-                Save DC
+                {isSavingDc ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save DC'
+                )}
               </Button>
               <Button onClick={() => {
-                if (hospitalName && dcNo) {
-                  setShowSettingsModal(false);
-                  setShowPrintModal(true);
+                if (!hospitalName || !dcNo || !receivedBy) {
+                  toast({ 
+                    title: 'Missing information', 
+                    description: 'Please fill in all required fields',
+                    variant: 'destructive'
+                  });
+                  return;
                 }
-              }} className="w-full sm:flex-1" variant="outline">
+                setShowSettingsModal(false);
+                setShowConfirmSaveDialog(true);
+              }} className="w-full sm:flex-1" variant="outline" disabled={isSavingDc}>
                 Save & Continue
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Save Dialog */}
+      <Dialog open={showConfirmSaveDialog} onOpenChange={setShowConfirmSaveDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Save to Google Sheets</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-2">
+              <div className="text-sm">
+                <span className="font-semibold">Hospital:</span>{' '}
+                <span className="text-muted-foreground">{hospitalName}</span>
+              </div>
+              <div className="text-sm">
+                <span className="font-semibold">DC No:</span>{' '}
+                <span className="text-muted-foreground">{dcNo}</span>
+              </div>
+              <div className="text-sm">
+                <span className="font-semibold">Received By:</span>{' '}
+                <span className="text-muted-foreground">{receivedBy}</span>
+              </div>
+              {(() => {
+                const { items, instruments, boxNumbers } = buildSavePayload();
+                const totalItems = items.reduce((sum, item) => sum + item.sizes.reduce((s, size) => s + size.qty, 0), 0);
+                return (
+                  <>
+                    <div className="text-sm">
+                      <span className="font-semibold">Total Items:</span>{' '}
+                      <span className="text-muted-foreground">{totalItems}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="font-semibold">Instruments:</span>{' '}
+                      <span className="text-muted-foreground">{instruments.length}</span>
+                    </div>
+                    {boxNumbers.length > 0 && (
+                      <div className="text-sm">
+                        <span className="font-semibold">Box Numbers:</span>{' '}
+                        <span className="text-muted-foreground">{boxNumbers.length}</span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              This DC will be saved to Google Sheets. You can manage it later from the "Saved DC List".
+            </p>
+
+            <div className="flex flex-col-reverse sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowConfirmSaveDialog(false);
+                  setShowSettingsModal(true);
+                }}
+                className="w-full sm:flex-1"
+                disabled={isSavingDc}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  setShowConfirmSaveDialog(false);
+                  const success = await handleSaveDc();
+                  if (!success) {
+                    setShowSettingsModal(true);
+                  } else {
+                    // Optionally open print dialog after successful save
+                    // setShowPrintModal(true);
+                  }
+                }}
+                className="w-full sm:flex-1"
+                disabled={isSavingDc}
+              >
+                {isSavingDc ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Saving to Sheets...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Confirm & Save
+                  </>
+                )}
               </Button>
             </div>
           </div>

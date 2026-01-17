@@ -86,6 +86,9 @@ const SavedDcs = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [savedDcs, setSavedDcs] = useState<SavedDc[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isActionLoading, setIsActionLoading] = useState(false); // Loading for action dialogs
+  const [loadingDcIds, setLoadingDcIds] = useState<Set<string>>(new Set()); // Loading for row operations
   const [filterText, setFilterText] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -109,8 +112,24 @@ const SavedDcs = () => {
   const [deletePassword, setDeletePassword] = useState("");
 
   useEffect(() => {
-    setSavedDcs(loadSavedDcs());
-  }, []);
+    const fetchDcs = async () => {
+      setIsLoading(true);
+      try {
+        const dcs = await loadSavedDcs();
+        setSavedDcs(dcs);
+      } catch (error) {
+        console.error('Error loading DCs:', error);
+        toast({ 
+          title: 'Error loading DCs', 
+          description: error instanceof Error ? error.message : 'Failed to load DCs from Google Sheets',
+          variant: 'destructive' 
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDcs();
+  }, [toast]);
 
   const normalizedDcs = useMemo(
     () =>
@@ -247,9 +266,27 @@ const SavedDcs = () => {
     };
   }, [normalizedDcs, statusCounts.pending]);
 
-  const handleDelete = (id: string) => {
-    setSavedDcs(deleteSavedDc(id));
-    toast({ title: "DC deleted" });
+  const handleDelete = async (id: string) => {
+    setLoadingDcIds(prev => new Set(prev).add(id));
+    try {
+      await deleteSavedDc(id);
+      const dcs = await loadSavedDcs();
+      setSavedDcs(dcs);
+      toast({ title: "DC deleted" });
+    } catch (error) {
+      console.error('Error deleting DC:', error);
+      toast({ 
+        title: "Error deleting DC", 
+        description: error instanceof Error ? error.message : 'Failed to delete DC',
+        variant: 'destructive' 
+      });
+    } finally {
+      setLoadingDcIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
   };
 
   const requestDelete = (dc: SavedDc) => {
@@ -457,85 +494,158 @@ const SavedDcs = () => {
     setCashAmountInput("");
   };
 
-  const handleConfirmReturn = (dc: SavedDc) => {
+  const handleConfirmReturn = async (dc: SavedDc) => {
     const returnedBy = returnedByInput.trim();
     if (!returnedBy) {
       toast({ title: "Returned By is required" });
       return;
     }
-    const updated = transitionSavedDc(dc.id, {
-      toStatus: "returned",
-      action: "MARK_RETURNED",
-      updates: {
-        returnedBy,
-        returnedAt: new Date().toISOString(),
-        returnedRemarks: returnedRemarksInput.trim() || "",
-      },
-    });
-    setSavedDcs(updated);
-    closeActionDialog();
-    toast({ title: "DC marked as returned" });
+    setIsActionLoading(true);
+    try {
+      await transitionSavedDc(dc.id, {
+        toStatus: "returned",
+        action: "MARK_RETURNED",
+        updates: {
+          returnedBy,
+          returnedAt: new Date().toISOString(),
+          returnedRemarks: returnedRemarksInput.trim() || "",
+        },
+      });
+      const dcs = await loadSavedDcs();
+      setSavedDcs(dcs);
+      closeActionDialog();
+      toast({ title: "DC marked as returned" });
+    } catch (error) {
+      console.error('Error marking DC as returned:', error);
+      toast({ 
+        title: "Error", 
+        description: error instanceof Error ? error.message : 'Failed to update DC',
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
-  const handleConfirmInvoice = (dc: SavedDc) => {
+  const handleConfirmInvoice = async (dc: SavedDc) => {
     const invoiceRef = invoiceRefInput.trim();
     if (!invoiceRef) {
       toast({ title: "Invoice number is required" });
       return;
     }
-    const updated = transitionSavedDc(dc.id, {
-      toStatus: "completed",
-      action: dc.status === "cash" ? "MOVE_CASH_TO_COMPLETED" : "LINK_INVOICE",
-      // When cash -> completed, clear cash fields (but keep them in history via meta.cleared)
-      clear: dc.status === "cash" ? (["cashAt", "cashAmount", "cashRemarks"] as any) : [],
-      updates: {
-        invoiceRef,
-        invoiceRemarks: invoiceRemarksInput.trim() || "",
-      },
-    });
-    setSavedDcs(updated);
-    closeActionDialog();
-    toast({ title: "Invoice linked. Moved to Completed." });
+    setIsActionLoading(true);
+    try {
+      await transitionSavedDc(dc.id, {
+        toStatus: "completed",
+        action: dc.status === "cash" ? "MOVE_CASH_TO_COMPLETED" : "LINK_INVOICE",
+        // When cash -> completed, clear cash fields (but keep them in history via meta.cleared)
+        clear: dc.status === "cash" ? (["cashAt", "cashAmount", "cashRemarks"] as any) : [],
+        updates: {
+          invoiceRef,
+          invoiceRemarks: invoiceRemarksInput.trim() || "",
+        },
+      });
+      const dcs = await loadSavedDcs();
+      setSavedDcs(dcs);
+      closeActionDialog();
+      toast({ title: "Invoice linked. Moved to Completed." });
+    } catch (error) {
+      console.error('Error linking invoice:', error);
+      toast({ 
+        title: "Error", 
+        description: error instanceof Error ? error.message : 'Failed to update DC',
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
-  const handleConfirmCash = (dc: SavedDc) => {
+  const handleConfirmCash = async (dc: SavedDc) => {
     const amount = parseFloat(cashAmountInput);
     if (!cashAmountInput.trim() || isNaN(amount) || amount <= 0) {
       toast({ title: "Valid cash amount is required" });
       return;
     }
-    const updated = transitionSavedDc(dc.id, {
-      toStatus: "cash",
-      action: "MOVE_TO_CASH",
-      updates: {
-        cashAt: new Date().toISOString(),
-        cashAmount: amount,
-        cashRemarks: cashRemarksInput.trim() || "",
-      },
-    });
-    setSavedDcs(updated);
-    closeActionDialog();
-    toast({ title: "Moved to Cash queue" });
+    setIsActionLoading(true);
+    try {
+      await transitionSavedDc(dc.id, {
+        toStatus: "cash",
+        action: "MOVE_TO_CASH",
+        updates: {
+          cashAt: new Date().toISOString(),
+          cashAmount: amount,
+          cashRemarks: cashRemarksInput.trim() || "",
+        },
+      });
+      const dcs = await loadSavedDcs();
+      setSavedDcs(dcs);
+      closeActionDialog();
+      toast({ title: "Moved to Cash queue" });
+    } catch (error) {
+      console.error('Error moving to cash:', error);
+      toast({ 
+        title: "Error", 
+        description: error instanceof Error ? error.message : 'Failed to update DC',
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
-  const moveBackToReturned = (dc: SavedDc) => {
-    const updated = transitionSavedDc(dc.id, {
-      toStatus: "returned",
-      action: "MOVE_BACK_TO_RETURNED",
-      clear: ["invoiceRef", "invoiceRemarks"],
-    });
-    setSavedDcs(updated);
-    toast({ title: "Moved back to Returned" });
+  const moveBackToReturned = async (dc: SavedDc) => {
+    setLoadingDcIds(prev => new Set(prev).add(dc.id));
+    try {
+      await transitionSavedDc(dc.id, {
+        toStatus: "returned",
+        action: "MOVE_BACK_TO_RETURNED",
+        clear: ["invoiceRef", "invoiceRemarks"],
+      });
+      const dcs = await loadSavedDcs();
+      setSavedDcs(dcs);
+      toast({ title: "Moved back to Returned" });
+    } catch (error) {
+      console.error('Error moving to returned:', error);
+      toast({ 
+        title: "Error", 
+        description: error instanceof Error ? error.message : 'Failed to update DC',
+        variant: 'destructive' 
+      });
+    } finally {
+      setLoadingDcIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(dc.id);
+        return newSet;
+      });
+    }
   };
 
-  const cancelReturnToPending = (dc: SavedDc) => {
-    const updated = transitionSavedDc(dc.id, {
-      toStatus: "pending",
-      action: "MOVE_BACK_TO_PENDING",
-      clear: ["returnedBy", "returnedAt", "returnedRemarks"],
-    });
-    setSavedDcs(updated);
-    toast({ title: "Moved back to Pending" });
+  const cancelReturnToPending = async (dc: SavedDc) => {
+    setLoadingDcIds(prev => new Set(prev).add(dc.id));
+    try {
+      await transitionSavedDc(dc.id, {
+        toStatus: "pending",
+        action: "MOVE_BACK_TO_PENDING",
+        clear: ["returnedBy", "returnedAt", "returnedRemarks"],
+      });
+      const dcs = await loadSavedDcs();
+      setSavedDcs(dcs);
+      toast({ title: "Moved back to Pending" });
+    } catch (error) {
+      console.error('Error moving to pending:', error);
+      toast({ 
+        title: "Error", 
+        description: error instanceof Error ? error.message : 'Failed to update DC',
+        variant: 'destructive' 
+      });
+    } finally {
+      setLoadingDcIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(dc.id);
+        return newSet;
+      });
+    }
   };
 
   const SortableHeader = ({
@@ -600,8 +710,22 @@ const SavedDcs = () => {
             <div className="mt-auto space-y-2">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold text-muted-foreground">Recent Saved</div>
-                <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setSavedDcs(loadSavedDcs())}>
-                  <RefreshCw className="w-4 h-4" />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 px-2" 
+                  onClick={async () => {
+                    try {
+                      const dcs = await loadSavedDcs();
+                      setSavedDcs(dcs);
+                      toast({ title: "DCs refreshed" });
+                    } catch (error) {
+                      toast({ title: "Error refreshing DCs", variant: 'destructive' });
+                    }
+                  }}
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 </Button>
               </div>
               <div className="rounded-xl border border-border/70 bg-background/60 p-2 space-y-1">
@@ -783,7 +907,14 @@ const SavedDcs = () => {
           </div>
         )}
 
-        {savedDcs.length === 0 ? (
+        {isLoading ? (
+          <Card className="glass-card border-2 border-border/60">
+            <CardHeader>
+              <CardTitle>Loading DCs...</CardTitle>
+              <CardDescription>Fetching DCs from Google Sheets</CardDescription>
+            </CardHeader>
+          </Card>
+        ) : savedDcs.length === 0 ? (
           <Card className="glass-card border-2 border-border/60">
             <CardHeader>
               <CardTitle>No DCs Tracked Yet</CardTitle>
@@ -1135,8 +1266,13 @@ const SavedDcs = () => {
                                       variant="ghost"
                                       className="h-8 w-8 p-0"
                                       onClick={(e) => e.stopPropagation()}
+                                      disabled={loadingDcIds.has(dc.id)}
                                     >
-                                      <Edit className="h-4 w-4 text-slate-600" />
+                                      {loadingDcIds.has(dc.id) ? (
+                                        <RefreshCw className="h-4 w-4 text-slate-600 animate-spin" />
+                                      ) : (
+                                        <Edit className="h-4 w-4 text-slate-600" />
+                                      )}
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="w-48">
@@ -1357,11 +1493,15 @@ const SavedDcs = () => {
                                         size="sm"
                                         variant="ghost"
                                         className="h-8 w-8 p-0 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        disabled={!selectedDcId || selectedDcId !== dc.id}
+                                        disabled={(!selectedDcId || selectedDcId !== dc.id) || loadingDcIds.has(dc.id)}
                                         title="Actions"
                                         onClick={(e) => e.stopPropagation()}
                                       >
-                                        <Edit className="h-4 w-4 text-slate-600" />
+                                        {loadingDcIds.has(dc.id) ? (
+                                          <RefreshCw className="h-4 w-4 text-slate-600 animate-spin" />
+                                        ) : (
+                                          <Edit className="h-4 w-4 text-slate-600" />
+                                        )}
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-48">
@@ -1501,8 +1641,15 @@ const SavedDcs = () => {
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={() => handleConfirmReturn(actionDialog.dc!)}>Confirm Return</Button>
-                <Button variant="outline" onClick={closeActionDialog}>
+                <Button 
+                  onClick={() => handleConfirmReturn(actionDialog.dc!)} 
+                  disabled={isActionLoading}
+                  className="gap-2"
+                >
+                  {isActionLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
+                  {isActionLoading ? 'Saving...' : 'Confirm Return'}
+                </Button>
+                <Button variant="outline" onClick={closeActionDialog} disabled={isActionLoading}>
                   Cancel
                 </Button>
               </div>
@@ -1530,8 +1677,15 @@ const SavedDcs = () => {
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={() => handleConfirmInvoice(actionDialog.dc!)}>Link Invoice</Button>
-                <Button variant="outline" onClick={closeActionDialog}>
+                <Button 
+                  onClick={() => handleConfirmInvoice(actionDialog.dc!)} 
+                  disabled={isActionLoading}
+                  className="gap-2"
+                >
+                  {isActionLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
+                  {isActionLoading ? 'Saving...' : 'Link Invoice'}
+                </Button>
+                <Button variant="outline" onClick={closeActionDialog} disabled={isActionLoading}>
                   Cancel
                 </Button>
               </div>
@@ -1572,8 +1726,15 @@ const SavedDcs = () => {
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={() => handleConfirmCash(actionDialog.dc!)}>Move to Cash</Button>
-                <Button variant="outline" onClick={closeActionDialog}>
+                <Button 
+                  onClick={() => handleConfirmCash(actionDialog.dc!)} 
+                  disabled={isActionLoading}
+                  className="gap-2"
+                >
+                  {isActionLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
+                  {isActionLoading ? 'Saving...' : 'Move to Cash'}
+                </Button>
+                <Button variant="outline" onClick={closeActionDialog} disabled={isActionLoading}>
                   Cancel
                 </Button>
               </div>

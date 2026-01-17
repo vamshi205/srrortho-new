@@ -1,3 +1,10 @@
+import {
+  fetchDcsFromSheets,
+  saveDcToSheets,
+  updateDcInSheets,
+  deleteDcFromSheets,
+} from '@/services/dcSheetsService';
+
 export type SavedDcItemSize = {
   size: string;
   qty: number;
@@ -59,27 +66,34 @@ const createId = () => {
   return `dc_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 };
 
-const writeSavedDcs = (items: SavedDc[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  return items;
-};
-
-export const loadSavedDcs = (): SavedDc[] => {
+/**
+ * Load DCs from Google Sheets
+ */
+export const loadSavedDcs = async (): Promise<SavedDc[]> => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed as SavedDc[];
-  } catch {
-    return [];
+    const dcs = await fetchDcsFromSheets();
+    return dcs;
+  } catch (error) {
+    console.error('Error loading DCs from Google Sheets:', error);
+    // Fallback to localStorage if Google Sheets fails
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed as SavedDc[];
+    } catch {
+      return [];
+    }
   }
 };
 
-export const saveSavedDc = (
+/**
+ * Save a new DC to Google Sheets
+ */
+export const saveSavedDc = async (
   data: Omit<SavedDc, "id" | "savedAt" | "status"> & { status?: SavedDcStatus },
-): SavedDc[] => {
-  const existing = loadSavedDcs();
+): Promise<SavedDc> => {
   const now = new Date().toISOString();
   const saved: SavedDc = {
     ...data,
@@ -94,24 +108,58 @@ export const saveSavedDc = (
       },
     ],
   };
-  return writeSavedDcs([saved, ...existing]);
+
+  try {
+    await saveDcToSheets(saved);
+    return saved;
+  } catch (error) {
+    console.error('Error saving DC to Google Sheets:', error);
+    throw error;
+  }
 };
 
-export const deleteSavedDc = (id: string): SavedDc[] => {
-  const existing = loadSavedDcs();
-  const updated = existing.filter((dc) => dc.id !== id);
-  return writeSavedDcs(updated);
+/**
+ * Delete a DC from Google Sheets
+ */
+export const deleteSavedDc = async (id: string): Promise<void> => {
+  try {
+    await deleteDcFromSheets(id);
+  } catch (error) {
+    console.error('Error deleting DC from Google Sheets:', error);
+    throw error;
+  }
 };
 
-export const clearSavedDcs = (): SavedDc[] => writeSavedDcs([]);
-
-export const updateSavedDc = (id: string, updates: Partial<SavedDc>): SavedDc[] => {
-  const existing = loadSavedDcs();
-  const updated = existing.map((dc) => (dc.id === id ? { ...dc, ...updates } : dc));
-  return writeSavedDcs(updated);
+/**
+ * Update a DC in Google Sheets
+ */
+export const updateSavedDc = async (id: string, updates: Partial<SavedDc>): Promise<SavedDc> => {
+  try {
+    // First, fetch all DCs to get the current DC
+    const dcs = await loadSavedDcs();
+    const dc = dcs.find((d) => d.id === id);
+    
+    if (!dc) {
+      throw new Error(`DC not found with id: ${id}`);
+    }
+    
+    // Merge updates with existing DC
+    const updatedDc: SavedDc = { ...dc, ...updates };
+    
+    // Update in Google Sheets
+    await updateDcInSheets(updatedDc);
+    
+    return updatedDc;
+  } catch (error) {
+    console.error('Error updating DC in Google Sheets:', error);
+    throw error;
+  }
 };
 
-export const transitionSavedDc = (
+/**
+ * Transition a DC to a new status with history tracking
+ */
+export const transitionSavedDc = async (
   id: string,
   args: {
     toStatus: SavedDcStatus;
@@ -120,12 +168,17 @@ export const transitionSavedDc = (
     clear?: Array<keyof SavedDc>;
     meta?: Record<string, unknown>;
   },
-): SavedDc[] => {
-  const existing = loadSavedDcs();
-  const now = new Date().toISOString();
-  const updated = existing.map((dc) => {
-    if (dc.id !== id) return dc;
+): Promise<SavedDc> => {
+  try {
+    // Fetch all DCs to get the current DC
+    const dcs = await loadSavedDcs();
+    const dc = dcs.find((d) => d.id === id);
+    
+    if (!dc) {
+      throw new Error(`DC not found with id: ${id}`);
+    }
 
+    const now = new Date().toISOString();
     const fromStatus = (dc.status ?? "pending") as SavedDcStatus;
 
     const clearedSnapshot: Record<string, unknown> = {};
@@ -149,15 +202,79 @@ export const transitionSavedDc = (
       },
     ];
 
-    return {
+    const updatedDc: SavedDc = {
       ...dc,
       ...cleared,
       ...(args.updates ?? {}),
       status: args.toStatus,
       history: nextHistory,
     };
-  });
 
-  return writeSavedDcs(updated);
+    // Update in Google Sheets
+    await updateDcInSheets(updatedDc);
+    
+    return updatedDc;
+  } catch (error) {
+    console.error('Error transitioning DC in Google Sheets:', error);
+    throw error;
+  }
+};
+
+/**
+ * Clear all DCs from Google Sheets (use with caution!)
+ */
+export const clearSavedDcs = async (): Promise<void> => {
+  try {
+    const dcs = await loadSavedDcs();
+    for (const dc of dcs) {
+      await deleteDcFromSheets(dc.id);
+    }
+  } catch (error) {
+    console.error('Error clearing DCs from Google Sheets:', error);
+    throw error;
+  }
+};
+
+/**
+ * Migrate DCs from localStorage to Google Sheets
+ * This is a one-time migration utility
+ */
+export const migrateLocalStorageToSheets = async (): Promise<{ success: number; failed: number }> => {
+  let success = 0;
+  let failed = 0;
+
+  try {
+    // Read from localStorage
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return { success: 0, failed: 0 };
+    }
+
+    const localDcs = JSON.parse(raw) as SavedDc[];
+    if (!Array.isArray(localDcs) || localDcs.length === 0) {
+      return { success: 0, failed: 0 };
+    }
+
+    // Save each DC to Google Sheets
+    for (const dc of localDcs) {
+      try {
+        await saveDcToSheets(dc);
+        success++;
+      } catch (error) {
+        console.error(`Failed to migrate DC ${dc.id}:`, error);
+        failed++;
+      }
+    }
+
+    // Clear localStorage after successful migration
+    if (success > 0 && failed === 0) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    return { success, failed };
+  } catch (error) {
+    console.error('Error during migration:', error);
+    throw error;
+  }
 };
 
