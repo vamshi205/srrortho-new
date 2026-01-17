@@ -4,31 +4,34 @@ import { ActiveProcedure } from '@/types/procedure';
 
 interface SummaryPanelProps {
   activeProcedures: ActiveProcedure[];
-  materialType: string;
   hospitalName: string;
   dcNo: string;
+  manualItems?: Array<{ name: string; size: string; qty: number }>;
+  manualInstruments?: string[];
+  manualBoxNumbers?: string[];
+  manualMaterialType?: string;
 }
 
 interface SummaryItem {
   name: string;
   sizes: { size: string; qty: number }[];
   procedure: string;
-  location?: { room: string; rack: string; box: string } | null;
   isSelectable: boolean;
 }
 
 export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
-  ({ activeProcedures, materialType, hospitalName, dcNo }, ref) => {
+  ({ activeProcedures, hospitalName, dcNo, manualItems = [], manualInstruments = [], manualBoxNumbers = [], manualMaterialType = 'SS' }, ref) => {
     const summaryData = useMemo(() => {
       const items: SummaryItem[] = [];
       const instruments = new Set<string>();
       const allBoxNumbers: string[] = [];
 
       activeProcedures.forEach((procedure) => {
+        const procedureMaterial = procedure.materialType || 'SS';
         // Process selected items (selectable items)
         procedure.selectedItems.forEach((item, itemName) => {
           const displayName =
-            materialType !== 'None' ? `${materialType} ${itemName}` : itemName;
+            procedureMaterial !== 'None' ? `${procedureMaterial} ${itemName}` : itemName;
           items.push({
             name: displayName,
             sizes: item.sizeQty.map((sq) => ({
@@ -36,7 +39,6 @@ export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
               qty: parseInt(sq.qty) || 1,
             })),
             procedure: procedure.name,
-            location: procedure.itemLocationMapping?.[itemName] || null,
             isSelectable: true,
           });
         });
@@ -47,12 +49,11 @@ export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
           if (isSelected) {
             const editedQty = procedure.fixedQtyEdits.get(fixedItem.name) ?? fixedItem.qty;
             const displayName =
-              materialType !== 'None' ? `${materialType} ${fixedItem.name}` : fixedItem.name;
+              procedureMaterial !== 'None' ? `${procedureMaterial} ${fixedItem.name}` : fixedItem.name;
             items.push({
               name: displayName,
               sizes: [{ size: '', qty: parseInt(editedQty) || 1 }],
               procedure: procedure.name,
-              location: procedure.fixedItemLocationMapping?.[fixedItem.name] || null,
               isSelectable: false,
             });
           }
@@ -67,8 +68,23 @@ export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
         }
       });
 
+      // Manual DC
+      manualItems.forEach((mi) => {
+        const displayName = manualMaterialType !== 'None' ? `${manualMaterialType} ${mi.name}` : mi.name;
+        items.push({
+          name: displayName,
+          sizes: [{ size: mi.size || '', qty: mi.qty }],
+          procedure: 'Manual',
+          isSelectable: true,
+        });
+      });
+      manualInstruments.forEach((inst) => instruments.add(inst));
+      if (manualBoxNumbers.length > 0) {
+        allBoxNumbers.push(...manualBoxNumbers);
+      }
+
       return { items, instruments: Array.from(instruments), boxNumbers: allBoxNumbers };
-    }, [activeProcedures, materialType]);
+    }, [activeProcedures, manualBoxNumbers, manualInstruments, manualItems, manualMaterialType]);
 
     const totalItems = summaryData.items.reduce(
       (acc, item) => acc + item.sizes.reduce((a, s) => a + s.qty, 0),
@@ -85,12 +101,18 @@ export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
       return total + 1;
     }, 0);
 
-    if (activeProcedures.length === 0) {
+    const hasAnything =
+      activeProcedures.length > 0 ||
+      manualItems.length > 0 ||
+      manualInstruments.length > 0 ||
+      manualBoxNumbers.length > 0;
+
+    if (!hasAnything) {
       return (
         <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-8 text-center">
           <FileText className="w-16 h-16 mb-4 opacity-40" />
-          <p className="text-lg font-medium">No procedures selected</p>
-          <p className="text-sm mt-1">Select procedures from the left to see the summary</p>
+          <p className="text-lg font-medium">Nothing selected</p>
+          <p className="text-sm mt-1">Select procedures or use Manual DC to see the summary</p>
         </div>
       );
     }
@@ -144,7 +166,6 @@ export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
                   <th className="text-left p-3 text-xs font-semibold text-muted-foreground">Item Name</th>
                   <th className="text-left p-3 text-xs font-semibold text-muted-foreground">Procedure</th>
                   <th className="text-center p-3 text-xs font-semibold text-muted-foreground">Qty</th>
-                  <th className="text-left p-3 text-xs font-semibold text-muted-foreground">Location</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,15 +198,6 @@ export const SummaryPanel = forwardRef<HTMLDivElement, SummaryPanelProps>(
                       </td>
                       <td className="p-3 text-xs text-muted-foreground">{item.procedure}</td>
                       <td className="p-3 text-sm font-semibold text-center">{totalQty}</td>
-                      <td className="p-3 text-xs text-muted-foreground">
-                        {item.location ? (
-                          <span>
-                            R:{item.location.room || '-'} Rack:{item.location.rack || '-'} Box:{item.location.box || '-'}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </td>
                     </tr>
                   );
                 })}

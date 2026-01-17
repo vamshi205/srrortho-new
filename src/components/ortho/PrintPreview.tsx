@@ -3,9 +3,12 @@ import { ActiveProcedure } from '@/types/procedure';
 
 interface PrintPreviewProps {
   activeProcedures: ActiveProcedure[];
-  materialType: string;
   hospitalName: string;
   dcNo: string;
+  manualItems?: Array<{ name: string; size: string; qty: number }>;
+  manualInstruments?: string[];
+  manualBoxNumbers?: string[];
+  manualMaterialType?: string;
 }
 
 interface PrintItem {
@@ -18,18 +21,19 @@ interface PrintItem {
 }
 
 export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
-  ({ activeProcedures, materialType, hospitalName, dcNo }, ref) => {
+  ({ activeProcedures, hospitalName, dcNo, manualItems = [], manualInstruments = [], manualBoxNumbers = [], manualMaterialType = 'SS' }, ref) => {
     const printItems = useMemo(() => {
       const items: PrintItem[] = [];
 
       activeProcedures.forEach((procedure) => {
+        const procedureMaterial = procedure.materialType || 'SS';
         // Fixed items first
         procedure.fixedItems.forEach((fixedItem) => {
           const isSelected = procedure.selectedFixedItems.get(fixedItem.name) ?? true;
           if (isSelected) {
             const editedQty = procedure.fixedQtyEdits.get(fixedItem.name) ?? fixedItem.qty;
             const displayName =
-              materialType !== 'None' ? `${materialType} ${fixedItem.name}` : fixedItem.name;
+              procedureMaterial !== 'None' ? `${procedureMaterial} ${fixedItem.name}` : fixedItem.name;
             items.push({
               name: displayName,
               description: '',
@@ -44,7 +48,7 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
         // Selected items (selectable items) - combine all sizes into one item
         procedure.selectedItems.forEach((item, itemName) => {
           const displayName =
-            materialType !== 'None' ? `${materialType} ${itemName}` : itemName;
+            procedureMaterial !== 'None' ? `${procedureMaterial} ${itemName}` : itemName;
 
           // Build size details string
           const sizeDetails = item.sizeQty
@@ -67,14 +71,29 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
         });
       });
 
+      // Manual DC items
+      manualItems.forEach((mi) => {
+        const displayName = manualMaterialType !== 'None' ? `${manualMaterialType} ${mi.name}` : mi.name;
+        const desc = mi.size ? `${mi.size} (Qty: ${mi.qty})` : '';
+        items.push({
+          name: displayName,
+          description: desc,
+          qty: mi.qty,
+          procedure: 'Manual',
+          location: null,
+          isSelectable: true,
+        });
+      });
+
       return items;
-    }, [activeProcedures, materialType]);
+    }, [activeProcedures, manualItems, manualMaterialType]);
 
     const allInstruments = useMemo(() => {
       const instruments = new Set<string>();
       activeProcedures.forEach((p) => p.instruments.forEach((i) => instruments.add(i)));
+      manualInstruments.forEach((i) => instruments.add(i));
       return Array.from(instruments);
-    }, [activeProcedures]);
+    }, [activeProcedures, manualInstruments]);
 
     const allBoxNumbers = useMemo(() => {
       const boxNumbers: string[] = [];
@@ -83,8 +102,9 @@ export const PrintPreview = forwardRef<HTMLDivElement, PrintPreviewProps>(
           boxNumbers.push(...p.boxNumbers);
         }
       });
+      if (manualBoxNumbers.length > 0) boxNumbers.push(...manualBoxNumbers);
       return boxNumbers;
-    }, [activeProcedures]);
+    }, [activeProcedures, manualBoxNumbers]);
 
     const today = new Date().toLocaleDateString('en-IN', {
       day: '2-digit',

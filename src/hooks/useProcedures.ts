@@ -163,8 +163,15 @@ export function useProcedures() {
       threshold: 0.4,
     });
 
-    const allItems = parsed.flatMap((p) => p.items);
-    itemFuse.current = new Fuse([...new Set(allItems)], { threshold: 0.4 });
+    const allItems = parsed.flatMap((p) => {
+      const selectable = p.items.flatMap((raw) => {
+        const base = raw.match(/^(.+?)\s*\{/)?.[1]?.trim() || raw.trim();
+        return base && base !== raw.trim() ? [raw.trim(), base] : [raw.trim()];
+      });
+      const fixed = p.fixedItems.map((fi) => fi.name).filter(Boolean);
+      return [...selectable, ...fixed];
+    });
+    itemFuse.current = new Fuse([...new Set(allItems.filter(Boolean))], { threshold: 0.4 });
 
     // Create instrument mapping with procedure names
     const instrumentMap = new Map<string, string>();

@@ -1,10 +1,11 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
-import { Activity, Printer, Download, Trash2, X, Settings2, Plus, ChevronDown, ChevronUp, Wrench, RefreshCw } from 'lucide-react';
+import { Activity, Printer, Download, Trash2, Plus, ChevronDown, ChevronUp, Wrench, RefreshCw, Bookmark, Save, LogOut, List, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { LoginScreen } from '@/components/ortho/LoginScreen';
@@ -12,25 +13,49 @@ import { ProcedureSelector } from '@/components/ortho/ProcedureSelector';
 import { ProcedureCard } from '@/components/ortho/ProcedureCard';
 import { SummaryPanel } from '@/components/ortho/SummaryPanel';
 import { PrintPreview } from '@/components/ortho/PrintPreview';
+import { useToast } from '@/hooks/use-toast';
 import { useProcedures } from '@/hooks/useProcedures';
+import { loadSavedDcs, saveSavedDc } from '@/lib/savedDcStorage';
 import { Procedure, ActiveProcedure, SizeQty } from '@/types/procedure';
 
 export default function OrthoApp() {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { toast } = useToast();
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => localStorage.getItem('srrortho:auth') === 'true'
+  );
   const { procedures, loading, procedureTypes, refetchSingleProcedure, searchProcedures, searchInstruments, searchItems, fetchProcedures } = useProcedures();
 
   // Initialize with empty array - no procedures selected by default
   const [activeProcedures, setActiveProcedures] = useState<ActiveProcedure[]>([]);
   const [collapsedProcedures, setCollapsedProcedures] = useState<Set<string>>(new Set());
-  const [materialType, setMaterialType] = useState('SS');
   const [hospitalName, setHospitalName] = useState('');
   const [dcNo, setDcNo] = useState('');
+  const [receivedBy, setReceivedBy] = useState('');
+  const [remarks, setRemarks] = useState('');
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showProcedureSelector, setShowProcedureSelector] = useState(false);
   const [initialFilterType, setInitialFilterType] = useState<string>('None');
   const [showSummaryMobile, setShowSummaryMobile] = useState(false);
+  const [recentSavedDcs, setRecentSavedDcs] = useState(() => loadSavedDcs().slice(0, 6));
+
+  // Manual DC builder
+  const [dcMode, setDcMode] = useState<'procedure' | 'manual'>('procedure');
+  const [manualMaterialType, setManualMaterialType] = useState('SS');
+  const [manualItemQuery, setManualItemQuery] = useState('');
+  const [manualItemName, setManualItemName] = useState('');
+  const [manualItemSuggestionsOpen, setManualItemSuggestionsOpen] = useState(false);
+  const [manualItemActiveIndex, setManualItemActiveIndex] = useState(-1);
+  const [manualItemSize, setManualItemSize] = useState('');
+  const [manualItemQty, setManualItemQty] = useState('1');
+  const [manualItems, setManualItems] = useState<Array<{ name: string; size: string; qty: number }>>([]);
+  const [manualInstrumentQuery, setManualInstrumentQuery] = useState('');
+  const [manualInstruments, setManualInstruments] = useState<string[]>([]);
+  const [manualInstrumentSuggestionsOpen, setManualInstrumentSuggestionsOpen] = useState(false);
+  const [manualInstrumentActiveIndex, setManualInstrumentActiveIndex] = useState(-1);
+  const [manualBoxInput, setManualBoxInput] = useState('');
+  const [manualBoxNumbers, setManualBoxNumbers] = useState<string[]>([]);
 
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +86,7 @@ export default function OrthoApp() {
       }
       const activeProcedure: ActiveProcedure = {
         ...procedure,
+        materialType: 'SS',
         selectedItems: new Map(),
         selectedFixedItems: new Map(procedure.fixedItems.map((fi) => [fi.name, true])),
         fixedQtyEdits: new Map(),
@@ -113,6 +139,12 @@ export default function OrthoApp() {
       );
     }
   }, [refetchSingleProcedure]);
+
+  const handleProcedureMaterialTypeChange = useCallback((procedureName: string, newType: string) => {
+    setActiveProcedures((prev) =>
+      prev.map((p) => (p.name === procedureName ? { ...p, materialType: newType } : p))
+    );
+  }, []);
 
   const handleItemToggle = useCallback((procedureName: string, itemName: string, checked: boolean) => {
     setActiveProcedures((prev) =>
@@ -484,12 +516,161 @@ export default function OrthoApp() {
   }, []);
 
   const handlePrint = () => {
-    if (!hospitalName || !dcNo) {
+    if (!hospitalName || !dcNo || !receivedBy) {
       setShowSettingsModal(true);
       return;
     }
     setShowPrintModal(true);
   };
+
+  const normalizedItemSuggestions = useMemo(() => {
+    const suggestions = searchItems(manualItemQuery);
+    const normalized = suggestions
+      .map((s) => s.match(/^(.+?)\s*\{/)?.[1]?.trim() || s.trim())
+      .filter(Boolean);
+    return Array.from(new Set(normalized)).slice(0, 10);
+  }, [manualItemQuery, searchItems]);
+
+  const instrumentSuggestions = useMemo(() => {
+    return searchInstruments(manualInstrumentQuery).slice(0, 10);
+  }, [manualInstrumentQuery, searchInstruments]);
+
+  useEffect(() => {
+    if (!manualItemSuggestionsOpen) return;
+    const q = manualItemQuery.trim().toLowerCase();
+    if (!q) return;
+    const matchIdx = normalizedItemSuggestions.findIndex((s) => s.toLowerCase() === q);
+    if (matchIdx >= 0 && matchIdx !== manualItemActiveIndex) {
+      setManualItemActiveIndex(matchIdx);
+    }
+  }, [manualItemActiveIndex, manualItemQuery, manualItemSuggestionsOpen, normalizedItemSuggestions]);
+
+  const selectManualItemSuggestion = useCallback((value: string) => {
+    setManualItemName(value);
+    setManualItemQuery(value);
+    setManualItemSuggestionsOpen(false);
+    setManualItemActiveIndex(-1);
+  }, []);
+
+  const selectManualInstrumentSuggestion = useCallback((value: string) => {
+    setManualInstruments((prev) => (prev.includes(value) ? prev : [...prev, value]));
+    setManualInstrumentQuery('');
+    setManualInstrumentSuggestionsOpen(false);
+    setManualInstrumentActiveIndex(-1);
+  }, []);
+
+  const buildSavePayload = useCallback(() => {
+    const items: Array<{
+      name: string;
+      sizes: { size: string; qty: number }[];
+      procedure: string;
+      isSelectable: boolean;
+    }> = [];
+    const instruments = new Set<string>();
+    const boxNumbers: string[] = [];
+
+    activeProcedures.forEach((procedure) => {
+      const procedureMaterial = procedure.materialType || 'SS';
+      procedure.selectedItems.forEach((item, itemName) => {
+        const displayName = procedureMaterial !== 'None' ? `${procedureMaterial} ${itemName}` : itemName;
+        items.push({
+          name: displayName,
+          sizes: item.sizeQty.map((sq) => ({
+            size: sq.size,
+            qty: parseInt(sq.qty) || 1,
+          })),
+          procedure: procedure.name,
+          isSelectable: true,
+        });
+      });
+
+      procedure.fixedItems.forEach((fixedItem) => {
+        const isSelected = procedure.selectedFixedItems.get(fixedItem.name) ?? true;
+        if (isSelected) {
+          const editedQty = procedure.fixedQtyEdits.get(fixedItem.name) ?? fixedItem.qty;
+          const displayName =
+            procedureMaterial !== 'None' ? `${procedureMaterial} ${fixedItem.name}` : fixedItem.name;
+          items.push({
+            name: displayName,
+            sizes: [{ size: '', qty: parseInt(editedQty) || 1 }],
+            procedure: procedure.name,
+            isSelectable: false,
+          });
+        }
+      });
+
+      procedure.instruments.forEach((inst) => instruments.add(inst));
+      if (procedure.boxNumbers && procedure.boxNumbers.length > 0) {
+        boxNumbers.push(...procedure.boxNumbers);
+      }
+    });
+
+    // Manual DC items (all selectable, no fixed items)
+    manualItems.forEach((mi) => {
+      const displayName = manualMaterialType !== 'None' ? `${manualMaterialType} ${mi.name}` : mi.name;
+      items.push({
+        name: displayName,
+        sizes: [{ size: mi.size || '', qty: mi.qty }],
+        procedure: 'Manual',
+        isSelectable: true,
+      });
+    });
+    manualInstruments.forEach((inst) => instruments.add(inst));
+    if (manualBoxNumbers.length > 0) {
+      boxNumbers.push(...manualBoxNumbers);
+    }
+
+    return { items, instruments: Array.from(instruments), boxNumbers };
+  }, [activeProcedures, manualItems, manualInstruments, manualBoxNumbers, manualMaterialType]);
+
+  const handleSaveDc = useCallback(() => {
+    if (!hospitalName || !dcNo || !receivedBy) {
+      setShowSettingsModal(true);
+      return;
+    }
+    if (activeProcedures.length === 0 && manualItems.length === 0 && manualInstruments.length === 0 && manualBoxNumbers.length === 0) {
+      toast({ title: 'Nothing to save', description: 'Add procedures or use Manual DC to add items/instruments.' });
+      return;
+    }
+    const { items, instruments, boxNumbers } = buildSavePayload();
+    const dcMaterialType = (() => {
+      const types = new Set<string>();
+      activeProcedures.forEach((p) => types.add(p.materialType || 'SS'));
+      if (manualItems.length > 0) types.add(manualMaterialType || 'SS');
+      const arr = Array.from(types);
+      if (arr.length === 0) return 'SS';
+      if (arr.length === 1) return arr[0];
+      return 'Mixed';
+    })();
+    saveSavedDc({
+      hospitalName,
+      dcNo,
+      materialType: dcMaterialType,
+      receivedBy,
+      remarks,
+      items,
+      instruments,
+      boxNumbers,
+    });
+    toast({ title: 'DC saved', description: `${hospitalName} · ${dcNo}` });
+    setRecentSavedDcs(loadSavedDcs().slice(0, 6));
+  }, [activeProcedures, buildSavePayload, dcNo, hospitalName, manualItems.length, manualInstruments.length, manualBoxNumbers.length, manualMaterialType, receivedBy, remarks, toast]);
+
+  const handleClearManualEntry = useCallback(() => {
+    setManualItems([]);
+    setManualInstruments([]);
+    setManualBoxNumbers([]);
+    setManualItemQuery('');
+    setManualItemName('');
+    setManualItemSize('');
+    setManualItemQty('1');
+    setManualInstrumentQuery('');
+    setManualBoxInput('');
+    setHospitalName('');
+    setDcNo('');
+    setReceivedBy('');
+    setRemarks('');
+  }, []);
 
   const handleSavePDF = async () => {
     if (!printRef.current) return;
@@ -521,11 +702,25 @@ export default function OrthoApp() {
     }
   };
 
-  const handleClearAll = () => {
+  const handleLogout = () => {
+    localStorage.removeItem('srrortho:auth');
+    setIsAuthenticated(false);
     setActiveProcedures([]);
     setHospitalName('');
     setDcNo('');
+    setReceivedBy('');
+    setRemarks('');
     setShowProcedureSelector(true);
+    setManualItems([]);
+    setManualInstruments([]);
+    setManualBoxNumbers([]);
+    setManualItemQuery('');
+    setManualItemName('');
+    setManualItemSize('');
+    setManualItemQty('1');
+    setManualInstrumentQuery('');
+    setManualBoxInput('');
+    setDcMode('procedure');
   };
 
   const handleAddBox = useCallback((procedureName: string, boxNumber: string) => {
@@ -551,74 +746,120 @@ export default function OrthoApp() {
   }, []);
 
   if (!isAuthenticated) {
-    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+    return (
+      <LoginScreen
+        onLogin={() => {
+          localStorage.setItem('srrortho:auth', 'true');
+          setIsAuthenticated(true);
+        }}
+      />
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-hero overflow-x-hidden">
-      {/* Header */}
-      <header className="fixed md:sticky top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink-0">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground flex-shrink-0">
-                <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
+      <div className="flex min-h-screen">
+        {/* Left Menu */}
+        <aside className="hidden md:flex w-80 border-r border-border bg-card/70 backdrop-blur-md">
+          <div className="flex flex-col w-full p-4 gap-4 overflow-y-auto">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
+                <Activity className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h1 className="font-display font-bold text-sm sm:text-lg truncate">SRR Ortho Implant</h1>
-                <p className="text-xs text-muted-foreground hidden sm:block">DC Generator</p>
+                <div className="font-display font-bold truncate">SRR Ortho Implant</div>
+                <div className="text-xs text-muted-foreground">DC Generator</div>
               </div>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="h-8 w-8 sm:h-9 sm:w-9" 
-                onClick={() => navigate('/admin')}
-                title="Admin Panel"
-              >
-                <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </Button>
-              <Select value={materialType} onValueChange={setMaterialType}>
-                <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-9 text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SS">SS (Steel)</SelectItem>
-                  <SelectItem value="Titanium">Titanium</SelectItem>
-                  <SelectItem value="None">No Prefix</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="h-8 w-8 sm:h-9 sm:w-9" 
+
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground">Navigation</div>
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2"
                 onClick={() => {
-                  fetchProcedures();
+                  setDcMode('procedure');
+                  setInitialFilterType('All');
+                  setShowProcedureSelector(true);
                 }}
-                title="Refresh data from Google Sheets"
-                disabled={loading}
               >
-                <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
+                <Plus className="w-4 h-4" /> Procedure List
               </Button>
-              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => setShowSettingsModal(true)}>
-                <Settings2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2"
+                onClick={() => {
+                  setDcMode('manual');
+                  setActiveProcedures([]);
+                  setCollapsedProcedures(new Set());
+                  setShowProcedureSelector(false);
+                }}
+              >
+                <Plus className="w-4 h-4" /> Manual DC
               </Button>
-              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={handleClearAll}>
-                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </Button>
-              <Button onClick={handlePrint} className="btn-gradient h-8 sm:h-9 px-2 sm:px-4 text-xs sm:text-sm">
-                <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Print</span>
+              <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate('/saved')}>
+                <List className="w-4 h-4" /> Saved DC List
               </Button>
             </div>
-          </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pt-20 md:pt-6 overflow-x-hidden">
-        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="mt-auto space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold text-muted-foreground">Recent Saved</div>
+                <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => navigate('/saved')}>
+                  <Bookmark className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="rounded-xl border border-border/70 bg-background/60 p-2 space-y-1">
+                {recentSavedDcs.length === 0 ? (
+                  <div className="text-xs text-muted-foreground p-2">No saved DCs yet</div>
+                ) : (
+                  recentSavedDcs.map((dc) => (
+                    <button
+                      key={dc.id}
+                      onClick={() => navigate('/saved')}
+                      className="w-full text-left px-2 py-1 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="text-xs font-medium truncate">{dc.hospitalName}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">{dc.dcNo}</div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 overflow-x-hidden">
+          {/* Top toolbar (desktop & mobile) */}
+          <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-4">
+            <div className="rounded-xl border border-border bg-card/80 backdrop-blur-md px-3 py-2 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="md:hidden w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-display font-semibold truncate">DC Generator</div>
+                  <div className="text-xs text-muted-foreground truncate">{hospitalName || 'Hospital'} · {dcNo || 'DC'}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => fetchProcedures()} disabled={loading}>
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>
+                  <Printer className="w-4 h-4" /> Print
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/admin')}>
+                  <Wrench className="w-4 h-4" /> Admin
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4" /> Logout
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left: Procedure Selection & Active Procedures */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6 min-w-0">
             {/* Active Procedures - Show first if they exist */}
@@ -633,6 +874,7 @@ export default function OrthoApp() {
                     onToggleCollapse={() => setCollapsedProcedures((prev) => { const next = new Set(prev); next.has(procedure.name) ? next.delete(procedure.name) : next.add(procedure.name); return next; })}
                     onRemove={() => handleRemoveProcedure(procedure.name)}
                     onRefresh={() => handleRefreshProcedure(procedure.name)}
+                    onMaterialTypeChange={(t) => handleProcedureMaterialTypeChange(procedure.name, t)}
                     onItemToggle={(item, checked) => handleItemToggle(procedure.name, item, checked)}
                     onSizeQtyChange={(item, sq) => handleSizeQtyChange(procedure.name, item, sq)}
                     onFixedItemToggle={(item, checked) => handleFixedItemToggle(procedure.name, item, checked)}
@@ -652,36 +894,477 @@ export default function OrthoApp() {
               </div>
             )}
 
-            {/* Procedure Selector - Show full selector or compact button */}
-            {showProcedureSelector ? (
-              <div className="glass-card rounded-xl p-2.5 sm:p-4 min-w-0">
-                <h2 className="font-display font-semibold text-base sm:text-lg mb-2 sm:mb-4">Select Procedures</h2>
-                {loading ? (
-                  <div className="py-12 text-center text-muted-foreground">Loading procedures...</div>
+            {/* Mode Panel (Procedure List vs Manual DC) */}
+            {dcMode === 'procedure' ? (
+              <>
+                {/* Procedure Selector - Show full selector or compact button */}
+                {showProcedureSelector ? (
+                  <div className="glass-card rounded-xl p-2.5 sm:p-4 min-w-0">
+                    <h2 className="font-display font-semibold text-base sm:text-lg mb-2 sm:mb-4">Select Procedures</h2>
+                    {loading ? (
+                      <div className="py-12 text-center text-muted-foreground">Loading procedures...</div>
+                    ) : (
+                      <ProcedureSelector
+                        procedures={procedures}
+                        procedureTypes={procedureTypes}
+                        activeProcedureNames={activeProcedures.map((p) => p.name)}
+                        onSelectProcedure={handleSelectProcedure}
+                        searchProcedures={searchProcedures}
+                        initialFilterType={initialFilterType}
+                      />
+                    )}
+                  </div>
                 ) : (
-                  <ProcedureSelector
-                    procedures={procedures}
-                    procedureTypes={procedureTypes}
-                    activeProcedureNames={activeProcedures.map((p) => p.name)}
-                    onSelectProcedure={handleSelectProcedure}
-                    searchProcedures={searchProcedures}
-                    initialFilterType={initialFilterType}
-                  />
+                  <div className="glass-card rounded-xl p-2.5 sm:p-4 flex items-center justify-center min-w-0">
+                    <Button
+                      onClick={() => {
+                        setDcMode('procedure');
+                        setInitialFilterType('All');
+                        setShowProcedureSelector(true);
+                      }}
+                      className="btn-gradient w-full sm:w-auto"
+                      size="lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Procedure
+                    </Button>
+                  </div>
                 )}
+              </>
+            ) : (
+              <div className="rounded-xl border border-border/60 bg-card/70 backdrop-blur-md p-4 sm:p-5 space-y-4 min-w-0 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="font-display font-semibold text-base sm:text-lg">Manual DC</h2>
+                    <div className="text-xs text-muted-foreground">
+                      Add items/instruments/boxes manually (all selectable, no fixed items)
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Select value={manualMaterialType} onValueChange={setManualMaterialType}>
+                      <SelectTrigger className="h-9 w-[140px] text-xs bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SS">SS</SelectItem>
+                        <SelectItem value="Titanium">Titanium</SelectItem>
+                        <SelectItem value="None">No Prefix</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 border-2 border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800"
+                      onClick={handleClearManualEntry}
+                    >
+                      <Trash2 className="w-4 h-4" /> Clear All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 border-border/70 bg-background/70"
+                      onClick={() => {
+                        setDcMode('procedure');
+                        setInitialFilterType('All');
+                        setShowProcedureSelector(true);
+                      }}
+                    >
+                      <Plus className="w-4 h-4" /> Procedure List
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div className="rounded-xl border border-border/60 bg-background/70 p-3 sm:p-4 space-y-3 border-l-4 border-l-blue-600/40">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-xs font-semibold">
+                          Items
+                        </span>
+                        <span className="text-xs text-muted-foreground">Search → select → add</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">Search, select, then add size/qty</div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{manualItems.length} added</div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_90px_120px] gap-2 items-end">
+                    <div className="relative">
+                      <Label>Item</Label>
+                      <div className="relative mt-1">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          value={manualItemQuery}
+                          onChange={(e) => {
+                            setManualItemQuery(e.target.value);
+                            setManualItemName(e.target.value);
+                            setManualItemSuggestionsOpen(true);
+                            setManualItemActiveIndex(0);
+                          }}
+                          onFocus={() => {
+                            if (manualItemQuery.trim().length > 0) {
+                              setManualItemSuggestionsOpen(true);
+                              setManualItemActiveIndex((idx) => (idx < 0 ? 0 : idx));
+                            }
+                          }}
+                          onBlur={() => {
+                            // allow click selection to run first
+                            setTimeout(() => setManualItemSuggestionsOpen(false), 120);
+                          }}
+                          onKeyDown={(e) => {
+                            const hasSuggestions = normalizedItemSuggestions.length > 0 && manualItemQuery.trim().length > 0;
+                            if (!hasSuggestions) return;
+
+                            if (e.key === 'ArrowDown') {
+                              e.preventDefault();
+                              setManualItemSuggestionsOpen(true);
+                              setManualItemActiveIndex((idx) => {
+                                const next = idx < 0 ? 0 : Math.min(idx + 1, normalizedItemSuggestions.length - 1);
+                                return next;
+                              });
+                            } else if (e.key === 'ArrowUp') {
+                              e.preventDefault();
+                              setManualItemSuggestionsOpen(true);
+                              setManualItemActiveIndex((idx) => {
+                                const next = idx < 0 ? normalizedItemSuggestions.length - 1 : Math.max(idx - 1, 0);
+                                return next;
+                              });
+                            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                              if (manualItemSuggestionsOpen) {
+                                const idx = manualItemActiveIndex >= 0 ? manualItemActiveIndex : 0;
+                                const v = normalizedItemSuggestions[idx];
+                                if (v) {
+                                  e.preventDefault();
+                                  selectManualItemSuggestion(v);
+                                }
+                              }
+                            } else if (e.key === 'Escape') {
+                              setManualItemSuggestionsOpen(false);
+                              setManualItemActiveIndex(-1);
+                            }
+                          }}
+                          placeholder="Search items..."
+                          className="pl-8 h-9 bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600"
+                          aria-autocomplete="list"
+                          aria-expanded={manualItemSuggestionsOpen}
+                        />
+                      </div>
+                      {manualItemSuggestionsOpen && manualItemQuery.trim().length > 0 && normalizedItemSuggestions.length > 0 && (
+                        <div
+                          className="absolute z-50 mt-1 w-full rounded-md border bg-background shadow-lg max-h-48 overflow-auto"
+                          role="listbox"
+                        >
+                          {normalizedItemSuggestions.map((s, idx) => (
+                            <button
+                              key={s}
+                              type="button"
+                              role="option"
+                              aria-selected={idx === manualItemActiveIndex}
+                              className={`w-full text-left px-3 py-2 text-sm transition-colors cursor-pointer ${
+                                idx === manualItemActiveIndex
+                                  ? 'bg-blue-600 text-white'
+                                  : 'hover:bg-slate-100 text-slate-900'
+                              }`}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                selectManualItemSuggestion(s);
+                              }}
+                              onMouseEnter={() => setManualItemActiveIndex(idx)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`h-1.5 w-1.5 rounded-full ${
+                                    idx === manualItemActiveIndex ? 'bg-white' : 'bg-blue-300'
+                                  }`}
+                                />
+                                <span className="truncate">{s}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Size</Label>
+                      <Input
+                        value={manualItemSize}
+                        onChange={(e) => setManualItemSize(e.target.value)}
+                        placeholder="Optional"
+                        className="mt-1 h-9 bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600"
+                      />
+                    </div>
+                    <div>
+                      <Label>Qty</Label>
+                      <Input
+                        type="number"
+                        value={manualItemQty}
+                        onChange={(e) => setManualItemQty(e.target.value)}
+                        min="1"
+                        className="mt-1 h-9 bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const name = manualItemName.trim();
+                        const qtyNum = Math.max(1, parseInt(manualItemQty || '1', 10) || 1);
+                        if (!name) {
+                          toast({ title: 'Item is required' });
+                          return;
+                        }
+                        setManualItems((prev) => [...prev, { name, size: manualItemSize.trim(), qty: qtyNum }]);
+                        setManualItemName('');
+                        setManualItemQuery('');
+                        setManualItemSize('');
+                        setManualItemQty('1');
+                      }}
+                      className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Plus className="w-4 h-4" /> Add Item
+                    </Button>
+                  </div>
+
+                  {manualItems.length > 0 && (
+                    <div className="rounded-lg border border-border/60 overflow-hidden bg-background/80">
+                      <div className="grid grid-cols-[1fr_140px_90px_44px] gap-2 px-3 py-2 text-[11px] font-semibold bg-muted/30 border-b border-border/60">
+                        <div>Item</div>
+                        <div>Size</div>
+                        <div className="text-right">Qty</div>
+                        <div />
+                      </div>
+                      <div className="divide-y">
+                        {manualItems.map((it, idx) => (
+                          <div key={`${it.name}-${idx}`} className="grid grid-cols-[1fr_140px_90px_44px] gap-2 px-3 py-2 text-sm">
+                            <div className="truncate">{it.name}</div>
+                            <div className="truncate text-muted-foreground">{it.size || '-'}</div>
+                            <div className="text-right font-semibold">{it.qty}</div>
+                            <button
+                              type="button"
+                              className="text-muted-foreground hover:text-destructive flex items-center justify-center"
+                              onClick={() => setManualItems((prev) => prev.filter((_, i) => i !== idx))}
+                              title="Remove item"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Instruments */}
+                <div className="rounded-xl border border-border/60 bg-background/70 p-3 sm:p-4 space-y-3 border-l-4 border-l-indigo-600/40">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 text-xs font-semibold">
+                          Instruments
+                        </span>
+                        <span className="text-xs text-muted-foreground">Pick with procedure badge</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">Search instruments (shows procedure badge)</div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{manualInstruments.length} added</div>
+                  </div>
+                  <div className="relative">
+                    <Label>Instrument</Label>
+                    <div className="relative mt-1">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        value={manualInstrumentQuery}
+                        onChange={(e) => {
+                          setManualInstrumentQuery(e.target.value);
+                          setManualInstrumentSuggestionsOpen(true);
+                          setManualInstrumentActiveIndex(0);
+                        }}
+                        placeholder="Search instruments..."
+                        className="pl-8 h-9 bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600"
+                        onFocus={() => {
+                          if (manualInstrumentQuery.trim().length > 0) {
+                            setManualInstrumentSuggestionsOpen(true);
+                            setManualInstrumentActiveIndex((idx) => (idx < 0 ? 0 : idx));
+                          }
+                        }}
+                        onBlur={() => {
+                          setTimeout(() => setManualInstrumentSuggestionsOpen(false), 120);
+                        }}
+                        onKeyDown={(e) => {
+                          const hasSuggestions = instrumentSuggestions.length > 0 && manualInstrumentQuery.trim().length > 0;
+                          if (!hasSuggestions) return;
+
+                          if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            setManualInstrumentSuggestionsOpen(true);
+                            setManualInstrumentActiveIndex((idx) => {
+                              const next = idx < 0 ? 0 : Math.min(idx + 1, instrumentSuggestions.length - 1);
+                              return next;
+                            });
+                          } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            setManualInstrumentSuggestionsOpen(true);
+                            setManualInstrumentActiveIndex((idx) => {
+                              const next = idx < 0 ? instrumentSuggestions.length - 1 : Math.max(idx - 1, 0);
+                              return next;
+                            });
+                          } else if (e.key === 'Enter' || e.key === 'Tab') {
+                            if (manualInstrumentSuggestionsOpen) {
+                              const idx = manualInstrumentActiveIndex >= 0 ? manualInstrumentActiveIndex : 0;
+                              const v = instrumentSuggestions[idx]?.instrument;
+                              if (v) {
+                                e.preventDefault();
+                                selectManualInstrumentSuggestion(v);
+                              }
+                            }
+                          } else if (e.key === 'Escape') {
+                            setManualInstrumentSuggestionsOpen(false);
+                            setManualInstrumentActiveIndex(-1);
+                          }
+                        }}
+                        aria-autocomplete="list"
+                        aria-expanded={manualInstrumentSuggestionsOpen}
+                      />
+                    </div>
+                    {manualInstrumentSuggestionsOpen && manualInstrumentQuery.trim().length > 0 && instrumentSuggestions.length > 0 && (
+                      <div className="absolute z-50 mt-1 w-full rounded-md border bg-background shadow-lg max-h-48 overflow-auto" role="listbox">
+                        {instrumentSuggestions.map((s, idx) => (
+                          <button
+                            key={`${s.instrument}-${s.procedureName}`}
+                            type="button"
+                            role="option"
+                            aria-selected={idx === manualInstrumentActiveIndex}
+                            className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                              idx === manualInstrumentActiveIndex ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
+                            }`}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              selectManualInstrumentSuggestion(s.instrument);
+                            }}
+                            onMouseEnter={() => setManualInstrumentActiveIndex(idx)}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`h-1.5 w-1.5 rounded-full ${idx === manualInstrumentActiveIndex ? 'bg-white' : 'bg-blue-300'}`} />
+                                <div className="font-medium truncate">{s.instrument}</div>
+                              </div>
+                              <Badge
+                                variant="secondary"
+                                className={`h-5 px-1.5 text-[10px] shrink-0 ${
+                                  idx === manualInstrumentActiveIndex ? 'bg-white/15 text-white border-white/20' : ''
+                                }`}
+                              >
+                                {s.procedureName}
+                              </Badge>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {manualInstruments.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {manualInstruments.map((inst) => (
+                        <span key={inst} className="inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-1 text-xs bg-muted/20">
+                          {inst}
+                          <button
+                            type="button"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => setManualInstruments((prev) => prev.filter((x) => x !== inst))}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Box Numbers */}
+                <div className="rounded-xl border border-border/60 bg-background/70 p-3 sm:p-4 space-y-3 border-l-4 border-l-green-600/40">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center rounded-full bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 text-xs font-semibold">
+                          Box Numbers
+                        </span>
+                        <span className="text-xs text-muted-foreground">Optional</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">Add one or more box numbers</div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{manualBoxNumbers.length} added</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={manualBoxInput}
+                      onChange={(e) => setManualBoxInput(e.target.value)}
+                      placeholder="Enter box number"
+                      className="h-9 bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 border-2 border-green-700 bg-green-600 text-white hover:bg-green-700 hover:text-white"
+                      onClick={() => {
+                        const trimmed = manualBoxInput.trim();
+                        if (!trimmed) return;
+                        setManualBoxNumbers((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
+                        setManualBoxInput('');
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  {manualBoxNumbers.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {manualBoxNumbers.map((b) => (
+                        <span key={b} className="inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-1 text-xs bg-muted/20">
+                          {b}
+                          <button
+                            type="button"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => setManualBoxNumbers((prev) => prev.filter((x) => x !== b))}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            ) : activeProcedures.length > 0 && (
-              <div className="glass-card rounded-xl p-2.5 sm:p-4 flex items-center justify-center min-w-0">
-                <Button
-                  onClick={() => {
-                    setInitialFilterType('All');
-                    setShowProcedureSelector(true);
-                  }}
-                  className="btn-gradient w-full sm:w-auto"
-                  size="lg"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New Procedure
-                </Button>
+            )}
+
+            {/* Submission Form (Save DC)
+                - Manual mode: always show (manual entries are the "selection")
+                - Procedure mode: show only when at least one active procedure is selected */}
+            {(dcMode === 'manual' || activeProcedures.length > 0) && (
+              <div id="dc-submission" className="glass-card rounded-xl p-4 sm:p-5 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-display font-semibold text-base sm:text-lg">Submission</h3>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/saved')} className="gap-2">
+                    <Bookmark className="w-4 h-4" /> Saved DCs
+                  </Button>
+                </div>
+
+                <div className="text-sm text-muted-foreground">
+                  {hospitalName || dcNo || receivedBy ? (
+                    <div className="space-y-0.5">
+                      <div><span className="font-semibold text-foreground">Hospital:</span> {hospitalName || '-'}</div>
+                      <div><span className="font-semibold text-foreground">DC No:</span> {dcNo || '-'}</div>
+                      <div><span className="font-semibold text-foreground">Received By:</span> {receivedBy || '-'}</div>
+                    </div>
+                  ) : (
+                    <div>Enter Hospital / DC details in the popup before saving or printing.</div>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button onClick={() => setShowSettingsModal(true)} className="w-full sm:flex-1 gap-2">
+                    <Save className="w-4 h-4" /> Save DC
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -703,7 +1386,15 @@ export default function OrthoApp() {
               </button>
               {showSummaryMobile && (
                 <div className="glass-card rounded-xl p-3 mt-4">
-                  <SummaryPanel activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
+                  <SummaryPanel
+                    activeProcedures={activeProcedures}
+                    hospitalName={hospitalName}
+                    dcNo={dcNo}
+                    manualItems={manualItems}
+                    manualInstruments={manualInstruments}
+                    manualBoxNumbers={manualBoxNumbers}
+                    manualMaterialType={manualMaterialType}
+                  />
                 </div>
               )}
             </div>
@@ -712,12 +1403,21 @@ export default function OrthoApp() {
             <div className="hidden lg:block">
               <div className="glass-card rounded-xl p-3 sm:p-4 sticky top-24">
                 <h2 className="font-display font-semibold text-base sm:text-lg mb-3 sm:mb-4">Summary</h2>
-                <SummaryPanel activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
+                <SummaryPanel
+                  activeProcedures={activeProcedures}
+                  hospitalName={hospitalName}
+                  dcNo={dcNo}
+                  manualItems={manualItems}
+                  manualInstruments={manualInstruments}
+                  manualBoxNumbers={manualBoxNumbers}
+                  manualMaterialType={manualMaterialType}
+                />
               </div>
             </div>
           </div>
         </div>
-      </main>
+        </main>
+      </div>
 
       {/* Settings Modal */}
       <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
@@ -726,12 +1426,19 @@ export default function OrthoApp() {
           <div className="space-y-4 pt-4">
             <div><Label>Hospital Name</Label><Input value={hospitalName} onChange={(e) => setHospitalName(e.target.value)} placeholder="Enter hospital name" className="mt-1" /></div>
             <div><Label>DC Number</Label><Input value={dcNo} onChange={(e) => setDcNo(e.target.value)} placeholder="Enter DC number" className="mt-1" /></div>
-            <Button onClick={() => {
-              if (hospitalName && dcNo) {
-                setShowSettingsModal(false);
-                setShowPrintModal(true);
-              }
-            }} className="w-full">Save & Continue</Button>
+            <div><Label>Received By</Label><Input value={receivedBy} onChange={(e) => setReceivedBy(e.target.value)} placeholder="Enter receiver name" className="mt-1" /></div>
+            <div><Label>Remarks</Label><Input value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Add remarks (optional)" className="mt-1" /></div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={handleSaveDc} className="w-full sm:flex-1">Save DC</Button>
+              <Button onClick={() => {
+                if (hospitalName && dcNo) {
+                  setShowSettingsModal(false);
+                  setShowPrintModal(true);
+                }
+              }} className="w-full sm:flex-1" variant="outline">
+                Save & Continue
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -743,7 +1450,16 @@ export default function OrthoApp() {
             <DialogTitle>Print Preview</DialogTitle>
           </DialogHeader>
           <div data-print-content>
-            <PrintPreview ref={printRef} activeProcedures={activeProcedures} materialType={materialType} hospitalName={hospitalName} dcNo={dcNo} />
+            <PrintPreview
+              ref={printRef}
+              activeProcedures={activeProcedures}
+              hospitalName={hospitalName}
+              dcNo={dcNo}
+              manualItems={manualItems}
+              manualInstruments={manualInstruments}
+              manualBoxNumbers={manualBoxNumbers}
+              manualMaterialType={manualMaterialType}
+            />
           </div>
           <div className="flex gap-3 mt-4 no-print" data-no-print>
             <Button onClick={handlePrintPDF} className="flex-1"><Printer className="w-4 h-4 mr-2" />Print</Button>

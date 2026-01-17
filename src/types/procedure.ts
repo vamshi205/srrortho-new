@@ -34,6 +34,7 @@ export interface SelectedItem {
 }
 
 export interface ActiveProcedure extends Procedure {
+  materialType: string;
   selectedItems: Map<string, SelectedItem>;
   selectedFixedItems: Map<string, boolean>;
   fixedQtyEdits: Map<string, string>;

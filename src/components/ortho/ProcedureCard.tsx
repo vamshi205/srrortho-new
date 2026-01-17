@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ActiveProcedure, SizeQty } from '@/types/procedure';
 import { InstrumentImageModal } from './InstrumentImageModal';
 
@@ -25,6 +26,7 @@ interface ProcedureCardProps {
   onToggleCollapse: () => void;
   onRemove: () => void;
   onRefresh: () => void;
+  onMaterialTypeChange: (materialType: string) => void;
   onItemToggle: (itemName: string, checked: boolean) => void;
   onSizeQtyChange: (itemName: string, sizeQty: SizeQty[]) => void;
   onFixedItemToggle: (itemName: string, checked: boolean) => void;
@@ -73,6 +75,7 @@ export function ProcedureCard({
   onToggleCollapse,
   onRemove,
   onRefresh,
+  onMaterialTypeChange,
   onItemToggle,
   onSizeQtyChange,
   onFixedItemToggle,
@@ -91,6 +94,7 @@ export function ProcedureCard({
   const [newInstrument, setNewInstrument] = useState('');
   const [newBoxNumber, setNewBoxNumber] = useState('');
   const [suggestions, setSuggestions] = useState<Array<{ instrument: string; procedureName: string }>>([]);
+  const [instrumentSuggestionActiveIndex, setInstrumentSuggestionActiveIndex] = useState(-1);
   const [showDetails, setShowDetails] = useState<Set<string>>(new Set());
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{
@@ -117,6 +121,7 @@ export function ProcedureCard({
   const [newItem, setNewItem] = useState('');
   const [itemSuggestions, setItemSuggestions] = useState<string[]>([]);
   const [showItemSuggestions, setShowItemSuggestions] = useState(false);
+  const [itemSuggestionActiveIndex, setItemSuggestionActiveIndex] = useState(-1);
   const instrumentInputRef = useRef<HTMLDivElement>(null);
   const itemInputRef = useRef<HTMLDivElement>(null);
   const [instrumentDropdownPos, setInstrumentDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -225,7 +230,11 @@ export function ProcedureCard({
   const handleInstrumentInput = (value: string) => {
     setNewInstrument(value);
     if (value.length >= 2) {
-      setSuggestions(onSearchInstruments(value).slice(0, 5));
+      const results = onSearchInstruments(value);
+      const available = results.filter((r) => !procedure.instruments.includes(r.instrument));
+      const sliced = available.slice(0, 5);
+      setSuggestions(sliced);
+      setInstrumentSuggestionActiveIndex(sliced.length > 0 ? 0 : -1);
       // Calculate position for portal
       if (instrumentInputRef.current) {
         const rect = instrumentInputRef.current.getBoundingClientRect();
@@ -237,6 +246,7 @@ export function ProcedureCard({
       }
     } else {
       setSuggestions([]);
+      setInstrumentSuggestionActiveIndex(-1);
       setInstrumentDropdownPos(null);
     }
   };
@@ -247,6 +257,7 @@ export function ProcedureCard({
     }
     setNewInstrument('');
     setSuggestions([]);
+    setInstrumentSuggestionActiveIndex(-1);
     setInstrumentDropdownPos(null);
   };
 
@@ -254,8 +265,11 @@ export function ProcedureCard({
     setNewItem(value);
     if (value.length >= 2) {
       const results = onSearchItems(value);
-      setItemSuggestions(results.slice(0, 5));
-      setShowItemSuggestions(results.length > 0);
+      const available = results.filter((r) => !procedure.items.includes(r));
+      const sliced = available.slice(0, 5);
+      setItemSuggestions(sliced);
+      setShowItemSuggestions(sliced.length > 0);
+      setItemSuggestionActiveIndex(sliced.length > 0 ? 0 : -1);
       // Calculate position for portal
       if (itemInputRef.current) {
         const rect = itemInputRef.current.getBoundingClientRect();
@@ -268,6 +282,7 @@ export function ProcedureCard({
     } else {
       setItemSuggestions([]);
       setShowItemSuggestions(false);
+      setItemSuggestionActiveIndex(-1);
       setItemDropdownPos(null);
     }
   };
@@ -279,6 +294,7 @@ export function ProcedureCard({
       setNewItem('');
       setItemSuggestions([]);
       setShowItemSuggestions(false);
+      setItemSuggestionActiveIndex(-1);
       setItemDropdownPos(null);
     }
   };
@@ -444,6 +460,16 @@ export function ProcedureCard({
           </Badge>
         </button>
         <div className="flex items-center gap-2">
+          <Select value={procedure.materialType} onValueChange={onMaterialTypeChange}>
+            <SelectTrigger className="h-8 w-[120px] text-xs bg-background border-2 border-slate-400 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="SS">SS</SelectItem>
+              <SelectItem value="Titanium">Titanium</SelectItem>
+              <SelectItem value="None">No Prefix</SelectItem>
+            </SelectContent>
+          </Select>
           <Button
             variant="ghost"
             size="icon"
@@ -791,15 +817,37 @@ export function ProcedureCard({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       if (showItemSuggestions && itemSuggestions.length > 0) {
-                        handleAddItem(itemSuggestions[0]);
+                        const idx = itemSuggestionActiveIndex >= 0 ? itemSuggestionActiveIndex : 0;
+                        handleAddItem(itemSuggestions[idx]);
                       } else {
                         handleAddItem();
                       }
+                    } else if (e.key === 'ArrowDown') {
+                      if (showItemSuggestions && itemSuggestions.length > 0) {
+                        e.preventDefault();
+                        setItemSuggestionActiveIndex((idx) => {
+                          const next = idx < 0 ? 0 : Math.min(idx + 1, itemSuggestions.length - 1);
+                          return next;
+                        });
+                      }
+                    } else if (e.key === 'ArrowUp') {
+                      if (showItemSuggestions && itemSuggestions.length > 0) {
+                        e.preventDefault();
+                        setItemSuggestionActiveIndex((idx) => {
+                          const next = idx < 0 ? itemSuggestions.length - 1 : Math.max(idx - 1, 0);
+                          return next;
+                        });
+                      }
+                    } else if (e.key === 'Escape') {
+                      setShowItemSuggestions(false);
+                      setItemSuggestionActiveIndex(-1);
+                      setItemDropdownPos(null);
                     }
                   }}
                   className="flex-1 h-9 border-2 border-blue-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-300"
                   onBlur={() => setTimeout(() => {
                     setShowItemSuggestions(false);
+                    setItemSuggestionActiveIndex(-1);
                     setItemDropdownPos(null);
                   }, 100)}
                 />
@@ -899,7 +947,36 @@ export function ProcedureCard({
                   onChange={(e) => handleInstrumentInput(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
+                      if (suggestions.length > 0) {
+                        const idx = instrumentSuggestionActiveIndex >= 0 ? instrumentSuggestionActiveIndex : 0;
+                        const v = suggestions[idx]?.instrument;
+                        if (v) {
+                          e.preventDefault();
+                          handleAddInstrument(v);
+                          return;
+                        }
+                      }
                       handleAddInstrument(newInstrument);
+                    } else if (e.key === 'ArrowDown') {
+                      if (suggestions.length > 0) {
+                        e.preventDefault();
+                        setInstrumentSuggestionActiveIndex((idx) => {
+                          const next = idx < 0 ? 0 : Math.min(idx + 1, suggestions.length - 1);
+                          return next;
+                        });
+                      }
+                    } else if (e.key === 'ArrowUp') {
+                      if (suggestions.length > 0) {
+                        e.preventDefault();
+                        setInstrumentSuggestionActiveIndex((idx) => {
+                          const next = idx < 0 ? suggestions.length - 1 : Math.max(idx - 1, 0);
+                          return next;
+                        });
+                      }
+                    } else if (e.key === 'Escape') {
+                      setSuggestions([]);
+                      setInstrumentSuggestionActiveIndex(-1);
+                      setInstrumentDropdownPos(null);
                     }
                   }}
                   className="flex-1 h-9 border-2 border-orange-400 focus:border-orange-600 focus:ring-2 focus:ring-orange-300"
@@ -1028,12 +1105,23 @@ export function ProcedureCard({
           {suggestions.map((suggestion, index) => (
             <button
               key={`${suggestion.instrument}-${index}`}
-              className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
+              aria-selected={index === instrumentSuggestionActiveIndex}
+              className={`w-full px-3 py-2 text-left text-sm transition-colors ${
+                index === instrumentSuggestionActiveIndex ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
+              }`}
               onClick={() => handleAddInstrument(suggestion.instrument)}
               onMouseDown={(e) => e.preventDefault()}
+              onMouseEnter={() => setInstrumentSuggestionActiveIndex(index)}
             >
-              <span className="font-medium">{suggestion.instrument}</span>
-              <span className="text-primary/70 text-xs ml-1.5">({suggestion.procedureName})</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`h-1.5 w-1.5 rounded-full ${index === instrumentSuggestionActiveIndex ? 'bg-white' : 'bg-blue-300'}`} />
+                  <span className="font-medium truncate">{suggestion.instrument}</span>
+                </div>
+                <span className={`text-xs shrink-0 ${index === instrumentSuggestionActiveIndex ? 'text-white/90' : 'text-primary/70'}`}>
+                  ({suggestion.procedureName})
+                </span>
+              </div>
             </button>
           ))}
         </div>,
@@ -1053,14 +1141,21 @@ export function ProcedureCard({
           }}
           className="mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
         >
-          {itemSuggestions.map((suggestion) => (
+          {itemSuggestions.map((suggestion, idx) => (
             <button
               key={suggestion}
-              className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
+              aria-selected={idx === itemSuggestionActiveIndex}
+              className={`w-full px-3 py-2 text-left text-sm transition-colors ${
+                idx === itemSuggestionActiveIndex ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
+              }`}
               onClick={() => handleAddItem(suggestion)}
               onMouseDown={(e) => e.preventDefault()}
+              onMouseEnter={() => setItemSuggestionActiveIndex(idx)}
             >
-              {suggestion}
+              <div className="flex items-center gap-2">
+                <span className={`h-1.5 w-1.5 rounded-full ${idx === itemSuggestionActiveIndex ? 'bg-white' : 'bg-blue-300'}`} />
+                <span className="truncate">{suggestion}</span>
+              </div>
             </button>
           ))}
         </div>,
