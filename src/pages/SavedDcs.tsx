@@ -726,7 +726,7 @@ const SavedDcs = () => {
         {savedDcs.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="glass-card border-2 border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
-              <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600">Total DCs</p>
@@ -740,7 +740,7 @@ const SavedDcs = () => {
             </Card>
 
             <Card className="glass-card border-2 border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
-              <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600">Pending</p>
@@ -754,7 +754,7 @@ const SavedDcs = () => {
             </Card>
 
             <Card className="glass-card border-2 border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
-              <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600">Avg. Turnaround</p>
@@ -768,7 +768,7 @@ const SavedDcs = () => {
             </Card>
 
             <Card className="glass-card border-2 border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
-              <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600">Items Out</p>
@@ -895,7 +895,7 @@ const SavedDcs = () => {
                 </div>
 
                 {(filterText || dateFrom || dateTo || quickFilter !== "all") && (
-                  <div className="flex items-center gap-2 p-4 rounded-xl bg-slate-50 border-2 border-slate-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-4 rounded-xl bg-slate-50 border-2 border-slate-200">
                     <span className="text-sm font-medium text-slate-800">Active filters:</span>
                     <div className="flex flex-wrap gap-2">
                       {filterText && (
@@ -951,7 +951,7 @@ const SavedDcs = () => {
                         setDateTo("");
                         setQuickFilter("all");
                       }}
-                      className="ml-auto text-xs border-red-300 text-red-700 hover:bg-red-50"
+                      className="w-full sm:w-auto sm:ml-auto text-xs border-red-300 text-red-700 hover:bg-red-50"
                     >
                       Clear All
                     </Button>
@@ -961,10 +961,10 @@ const SavedDcs = () => {
 
               {/* Queue Tabs */}
               <Tabs value={activeQueue} onValueChange={(value) => setActiveQueue(value as SavedDcStatus)}>
-                <TabsList className="grid grid-cols-2 sm:grid-cols-4 bg-muted/30 border border-border/50 h-12 p-1 rounded-xl">
+                <TabsList className="grid grid-cols-2 sm:grid-cols-4 gap-1 bg-muted/30 border border-border/50 h-auto sm:h-12 p-1 rounded-xl">
                   <TabsTrigger
                     value="pending"
-                    className="gap-2 relative rounded-lg data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground transition-all"
+                    className="gap-2 relative rounded-lg text-xs sm:text-sm py-2 data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground transition-all"
                   >
                     <AlertCircle className="h-4 w-4" />
                     <span className="font-medium">Pending</span>
@@ -979,7 +979,7 @@ const SavedDcs = () => {
                   </TabsTrigger>
                   <TabsTrigger
                     value="returned"
-                    className="gap-2 relative rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+                    className="gap-2 relative rounded-lg text-xs sm:text-sm py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
                   >
                     <User className="h-4 w-4" />
                     <span className="font-medium">Returned</span>
@@ -994,7 +994,7 @@ const SavedDcs = () => {
                   </TabsTrigger>
                   <TabsTrigger
                     value="completed"
-                    className="gap-2 relative rounded-lg data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all"
+                    className="gap-2 relative rounded-lg text-xs sm:text-sm py-2 data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all"
                   >
                     <Receipt className="h-4 w-4" />
                     <span className="font-medium">Completed</span>
@@ -1009,7 +1009,7 @@ const SavedDcs = () => {
                   </TabsTrigger>
                   <TabsTrigger
                     value="cash"
-                    className="gap-2 relative rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
+                    className="gap-2 relative rounded-lg text-xs sm:text-sm py-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
                   >
                     <Wallet className="h-4 w-4" />
                     <span className="font-medium">Cash</span>
@@ -1028,7 +1028,7 @@ const SavedDcs = () => {
 
             <CardContent className="p-0">
               {selectedDc && (
-                <div className="flex items-center justify-between gap-3 px-4 py-3 border-t-2 border-slate-200 bg-slate-50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 px-4 py-3 border-t-2 border-slate-200 bg-slate-50">
                   <div className="text-sm">
                     <span className="text-slate-600">Selected:</span>{" "}
                     <span className="font-semibold text-blue-700">{selectedDc.dcNo}</span>{" "}
@@ -1038,7 +1038,7 @@ const SavedDcs = () => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0 hover:bg-slate-200"
+                    className="h-8 w-8 p-0 hover:bg-slate-200 self-end sm:self-auto"
                     onClick={() => setSelectedDcId(null)}
                     title="Clear selection"
                   >
@@ -1071,8 +1071,8 @@ const SavedDcs = () => {
                   </div>
                 ) : (
                   <div className="border-2 border-slate-300 rounded-lg overflow-hidden">
-                    <div className="max-h-[60vh] overflow-y-auto overflow-x-auto">
-                      <table className="min-w-[980px] w-max border-separate border-spacing-0">
+                    <div className="max-h-[55vh] sm:max-h-[60vh] overflow-y-auto overflow-x-auto md:overflow-x-hidden">
+                      <table className="w-full min-w-[980px] md:min-w-0 border-separate border-spacing-0">
                       <thead>
                         <tr className="bg-slate-100 border-b-2 border-slate-300 sticky top-0 z-10">
                           <th className="text-center p-2 sm:p-4 text-sm font-bold text-slate-700 w-[60px] border-r-2 border-slate-300">
@@ -1131,7 +1131,7 @@ const SavedDcs = () => {
                                 setSelectedDcId(dc.id);
                               }}
                             >
-                              <td className="p-4 text-center border-r-2 border-slate-200">
+                              <td className="p-2 sm:p-4 text-center border-r-2 border-slate-200">
                                 <input
                                   type="radio"
                                   name="selected-dc"
@@ -1142,7 +1142,7 @@ const SavedDcs = () => {
                                   onClick={(e) => e.stopPropagation()}
                                 />
                               </td>
-                              <td className="p-4 border-r-2 border-slate-200">
+                              <td className="p-2 sm:p-4 border-r-2 border-slate-200">
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-4 w-4 text-slate-400 flex-shrink-0" />
                                   <button
@@ -1157,7 +1157,7 @@ const SavedDcs = () => {
                                   </button>
                                 </div>
                               </td>
-                              <td className="p-4 border-r-2 border-slate-200">
+                              <td className="p-2 sm:p-4 border-r-2 border-slate-200">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -1169,19 +1169,19 @@ const SavedDcs = () => {
                                   {dc.dcNo}
                                 </button>
                               </td>
-                              <td className="p-4 border-r-2 border-slate-200">
+                              <td className="p-2 sm:p-4 border-r-2 border-slate-200">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedDcId(dc.id);
                                     setDetailsDialogOpen(true);
                                   }}
-                                  className="text-sm hover:text-blue-700 transition-colors text-left max-w-48 truncate"
+                                  className="text-sm hover:text-blue-700 transition-colors text-left max-w-[160px] sm:max-w-48 truncate"
                                 >
                                   {dc.hospitalName}
                                 </button>
                               </td>
-                              <td className="p-4 text-center border-r-2 border-slate-200">
+                              <td className="p-2 sm:p-4 text-center border-r-2 border-slate-200">
                                 <div className="flex items-center justify-center gap-1">
                                   <Package className="h-3.5 w-3.5 text-slate-400" />
                                   <Badge variant="outline" className="text-xs font-medium border-slate-300">
@@ -1189,7 +1189,7 @@ const SavedDcs = () => {
                                   </Badge>
                                 </div>
                               </td>
-                              <td className="p-4 text-center border-r-2 border-slate-200">
+                              <td className="p-2 sm:p-4 text-center border-r-2 border-slate-200">
                                 <div className={`text-sm font-medium ${daysPending > 7 && dc.status === 'pending' ? 'text-red-600' : 'text-slate-600'}`}>
                                   {daysPending}d
                                   {daysPending > 7 && dc.status === 'pending' && (
@@ -1197,7 +1197,7 @@ const SavedDcs = () => {
                                   )}
                                 </div>
                               </td>
-                              <td className="p-4 border-r-2 border-slate-200">
+                              <td className="p-2 sm:p-4 border-r-2 border-slate-200">
                                 <div className="flex justify-center">
                                   <Badge className={`${getStatusBadgeClass(dc.status)} flex items-center gap-1.5 text-xs font-medium border px-2 py-1`}>
                                     {getStatusIcon(dc.status)}
@@ -1205,7 +1205,7 @@ const SavedDcs = () => {
                                   </Badge>
                                 </div>
                               </td>
-                              <td className="p-4 text-center">
+                              <td className="p-2 sm:p-4 text-center">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button
