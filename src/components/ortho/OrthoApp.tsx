@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
-import { Activity, Printer, Download, Trash2, Plus, ChevronDown, ChevronUp, Wrench, RefreshCw, Bookmark, Save, LogOut, List, Search, X, Menu } from 'lucide-react';
+import { Activity, Printer, Download, Trash2, Plus, ChevronDown, ChevronUp, Wrench, RefreshCw, Bookmark, Save, LogOut, List, Search, X, Menu, Images } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -811,6 +811,9 @@ export default function OrthoApp() {
               >
                 <Plus className="w-4 h-4" /> Manual DC
               </Button>
+              <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate('/images')}>
+                <Images className="w-4 h-4" /> Image Database
+              </Button>
               <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate('/saved')}>
                 <List className="w-4 h-4" /> Saved DC List
               </Button>
@@ -899,6 +902,11 @@ export default function OrthoApp() {
                               }}
                             >
                               <Plus className="w-4 h-4" /> Manual DC
+                            </Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate('/images')}>
+                              <Images className="w-4 h-4" /> Image Database
                             </Button>
                           </SheetClose>
                           <SheetClose asChild>

@@ -17,6 +17,7 @@ interface InstrumentImageModalProps {
   allInstruments?: Array<{ name: string; url: string; fallbackUrls?: any }>;
   currentIndex?: number;
   onNavigate?: (index: number) => void;
+  headerActions?: React.ReactNode;
 }
 
 export function InstrumentImageModal({
@@ -28,6 +29,7 @@ export function InstrumentImageModal({
   allInstruments = [],
   currentIndex = 0,
   onNavigate,
+  headerActions,
 }: InstrumentImageModalProps) {
   const [currentImageError, setCurrentImageError] = useState(false);
   const [currentUrl, setCurrentUrl] = useState(imageUrl || '');
@@ -139,9 +141,10 @@ export function InstrumentImageModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
         <DialogHeader>
-          <DialogTitle>
-            {instrumentName}
-          </DialogTitle>
+          <div className="flex items-center justify-between gap-3">
+            <DialogTitle className="min-w-0 truncate">{instrumentName}</DialogTitle>
+            {headerActions ? <div className="flex items-center gap-2">{headerActions}</div> : null}
+          </div>
         </DialogHeader>
         <div className="flex flex-col items-center justify-center min-h-[200px] p-4 relative">
           {currentImageError && fallbackUrls && !allFormatsFailed && (
