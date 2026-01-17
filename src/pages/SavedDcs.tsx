@@ -848,8 +848,9 @@ const SavedDcs = () => {
                 </div>
 
                 {/* Advanced Filters */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                  <div className="space-y-1.5 sm:col-span-1">
+                <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-4">
+                  {/* Search */}
+                  <div className="space-y-1.5">
                     <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
                       <Search className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-600" />
                       Search
@@ -858,35 +859,42 @@ const SavedDcs = () => {
                       value={filterText}
                       onChange={(e) => setFilterText(e.target.value)}
                       placeholder="Party or DC no..."
-                      className="h-8 sm:h-9 text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500"
+                      className="h-9 text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 sm:col-span-2">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
-                        <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-600" />
-                        From
-                      </label>
-                      <Input
-                        type="date"
-                        value={dateFrom}
-                        onChange={(e) => setDateFrom(e.target.value)}
-                        className="h-8 sm:h-9 text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
-                        <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-600" />
-                        To
-                      </label>
-                      <Input
-                        type="date"
-                        value={dateTo}
-                        onChange={(e) => setDateTo(e.target.value)}
-                        className="h-8 sm:h-9 text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500"
-                      />
+                  {/* Date Range - inline on mobile */}
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5 mb-1.5">
+                      <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-600" />
+                      Date Range
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          type="date"
+                          value={dateFrom}
+                          onChange={(e) => setDateFrom(e.target.value)}
+                          className="h-9 text-xs sm:text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500 pr-2 [&::-webkit-calendar-picker-indicator]:opacity-70"
+                          placeholder="From"
+                        />
+                        {!dateFrom && (
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">From</span>
+                        )}
+                      </div>
+                      <span className="text-slate-400 text-xs flex-shrink-0">→</span>
+                      <div className="relative flex-1">
+                        <Input
+                          type="date"
+                          value={dateTo}
+                          onChange={(e) => setDateTo(e.target.value)}
+                          className="h-9 text-xs sm:text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500 pr-2 [&::-webkit-calendar-picker-indicator]:opacity-70"
+                          placeholder="To"
+                        />
+                        {!dateTo && (
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">To</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
