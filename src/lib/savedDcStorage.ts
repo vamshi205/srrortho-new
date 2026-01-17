@@ -1,9 +1,9 @@
 import {
-  fetchDcsFromSheets,
-  saveDcToSheets,
-  updateDcInSheets,
-  deleteDcFromSheets,
-} from '@/services/dcSheetsService';
+  fetchDcsFromFirestore,
+  saveDcToFirestore,
+  updateDcInFirestore,
+  deleteDcFromFirestore,
+} from '@/services/firestoreService';
 
 export type SavedDcItemSize = {
   size: string;
@@ -71,7 +71,7 @@ const createId = () => {
  */
 export const loadSavedDcs = async (): Promise<SavedDc[]> => {
   try {
-    const dcs = await fetchDcsFromSheets();
+    const dcs = await fetchDcsFromFirestore();
     return dcs;
   } catch (error) {
     console.error('Error loading DCs from Google Sheets:', error);
@@ -110,10 +110,10 @@ export const saveSavedDc = async (
   };
 
   try {
-    await saveDcToSheets(saved);
+    await saveDcToFirestore(saved);
     return saved;
   } catch (error) {
-    console.error('Error saving DC to Google Sheets:', error);
+    console.error('Error saving DC to Firestore:', error);
     throw error;
   }
 };
@@ -123,9 +123,9 @@ export const saveSavedDc = async (
  */
 export const deleteSavedDc = async (id: string): Promise<void> => {
   try {
-    await deleteDcFromSheets(id);
+    await deleteDcFromFirestore(id);
   } catch (error) {
-    console.error('Error deleting DC from Google Sheets:', error);
+    console.error('Error deleting DC from Firestore:', error);
     throw error;
   }
 };
@@ -146,12 +146,12 @@ export const updateSavedDc = async (id: string, updates: Partial<SavedDc>): Prom
     // Merge updates with existing DC
     const updatedDc: SavedDc = { ...dc, ...updates };
     
-    // Update in Google Sheets
-    await updateDcInSheets(updatedDc);
+    // Update in Firestore
+    await updateDcInFirestore(updatedDc);
     
     return updatedDc;
   } catch (error) {
-    console.error('Error updating DC in Google Sheets:', error);
+    console.error('Error updating DC in Firestore:', error);
     throw error;
   }
 };
@@ -210,12 +210,12 @@ export const transitionSavedDc = async (
       history: nextHistory,
     };
 
-    // Update in Google Sheets
-    await updateDcInSheets(updatedDc);
+    // Update in Firestore
+    await updateDcInFirestore(updatedDc);
     
     return updatedDc;
   } catch (error) {
-    console.error('Error transitioning DC in Google Sheets:', error);
+    console.error('Error transitioning DC in Firestore:', error);
     throw error;
   }
 };
@@ -225,12 +225,15 @@ export const transitionSavedDc = async (
  */
 export const clearSavedDcs = async (): Promise<void> => {
   try {
+    // Note: Clearing all documents in a Firestore collection requires iterating and deleting,
+    // which can be costly. For a full clear, it's better to use the Firebase Console.
+    // For now, we'll keep the logic to delete one by one, but with a warning.
     const dcs = await loadSavedDcs();
     for (const dc of dcs) {
-      await deleteDcFromSheets(dc.id);
+      await deleteDcFromFirestore(dc.id);
     }
   } catch (error) {
-    console.error('Error clearing DCs from Google Sheets:', error);
+    console.error('Error clearing DCs from Firestore:', error);
     throw error;
   }
 };
@@ -255,10 +258,10 @@ export const migrateLocalStorageToSheets = async (): Promise<{ success: number; 
       return { success: 0, failed: 0 };
     }
 
-    // Save each DC to Google Sheets
+    // Save each DC to Firestore
     for (const dc of localDcs) {
       try {
-        await saveDcToSheets(dc);
+        await saveDcToFirestore(dc);
         success++;
       } catch (error) {
         console.error(`Failed to migrate DC ${dc.id}:`, error);
