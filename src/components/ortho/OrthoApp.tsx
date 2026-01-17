@@ -1,13 +1,14 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import html2pdf from 'html2pdf.js';
-import { Activity, Printer, Download, Trash2, Plus, ChevronDown, ChevronUp, Wrench, RefreshCw, Bookmark, Save, LogOut, List, Search, X } from 'lucide-react';
+import { Activity, Printer, Download, Trash2, Plus, ChevronDown, ChevronUp, Wrench, RefreshCw, Bookmark, Save, LogOut, List, Search, X, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { LoginScreen } from '@/components/ortho/LoginScreen';
 import { ProcedureSelector } from '@/components/ortho/ProcedureSelector';
 import { ProcedureCard } from '@/components/ortho/ProcedureCard';
@@ -857,18 +858,99 @@ export default function OrthoApp() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => fetchProcedures()} disabled={loading}>
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>
-                  <Printer className="w-4 h-4" /> Print
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/admin')}>
-                  <Wrench className="w-4 h-4" /> Admin
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={handleLogout}>
-                  <LogOut className="w-4 h-4" /> Logout
-                </Button>
+                {/* Mobile menu */}
+                <div className="md:hidden">
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="icon" className="h-9 w-9">
+                        <Menu className="h-4 w-4" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="p-4">
+                      <SheetHeader className="pr-10">
+                        <SheetTitle>Menu</SheetTitle>
+                      </SheetHeader>
+
+                      <div className="mt-4 space-y-4">
+                        <div className="space-y-2">
+                          <div className="text-xs font-semibold text-muted-foreground">Navigation</div>
+                          <SheetClose asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start gap-2"
+                              onClick={() => {
+                                setDcMode('procedure');
+                                setInitialFilterType('All');
+                                setShowProcedureSelector(true);
+                              }}
+                            >
+                              <Plus className="w-4 h-4" /> Procedure List
+                            </Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start gap-2"
+                              onClick={() => {
+                                setDcMode('manual');
+                                setActiveProcedures([]);
+                                setCollapsedProcedures(new Set());
+                                setShowProcedureSelector(false);
+                              }}
+                            >
+                              <Plus className="w-4 h-4" /> Manual DC
+                            </Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate('/saved')}>
+                              <List className="w-4 h-4" /> Saved DC List
+                            </Button>
+                          </SheetClose>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="text-xs font-semibold text-muted-foreground">Actions</div>
+                          <SheetClose asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => fetchProcedures()} disabled={loading}>
+                              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh Data
+                            </Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={handlePrint}>
+                              <Printer className="w-4 h-4" /> Print
+                            </Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate('/admin')}>
+                              <Wrench className="w-4 h-4" /> Admin
+                            </Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={handleLogout}>
+                              <LogOut className="w-4 h-4" /> Logout
+                            </Button>
+                          </SheetClose>
+                        </div>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
+
+                {/* Desktop actions */}
+                <div className="hidden md:flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => fetchProcedures()} disabled={loading}>
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>
+                    <Printer className="w-4 h-4" /> Print
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/admin')}>
+                    <Wrench className="w-4 h-4" /> Admin
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={handleLogout}>
+                    <LogOut className="w-4 h-4" /> Logout
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

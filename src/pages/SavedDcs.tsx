@@ -14,6 +14,7 @@ import {
   Filter,
   IndianRupee,
   LogOut,
+  Menu,
   Package,
   Plus,
   RefreshCw,
@@ -33,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -649,15 +651,72 @@ const SavedDcs = () => {
                 <Badge variant="outline" className="hidden md:inline-flex border-slate-300 text-slate-700">
                   {activeQueue.toUpperCase()} • {statusCounts[activeQueue]}
                 </Badge>
-                <Button variant="outline" size="sm" className="gap-2" onClick={handleExportCSV}>
-                  <Download className="w-4 h-4" /> Export
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/admin")}>
-                  <Wrench className="w-4 h-4" /> Admin
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={handleLogout}>
-                  <LogOut className="w-4 h-4" /> Logout
-                </Button>
+                {/* Mobile menu */}
+                <div className="md:hidden">
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="icon" className="h-9 w-9">
+                        <Menu className="h-4 w-4" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="p-4">
+                      <SheetHeader className="pr-10">
+                        <SheetTitle>DC Tracker</SheetTitle>
+                      </SheetHeader>
+
+                      <div className="mt-4 space-y-4">
+                        <div className="space-y-2">
+                          <div className="text-xs font-semibold text-muted-foreground">Navigation</div>
+                          <SheetClose asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate("/")}>
+                              <Plus className="w-4 h-4" /> Procedure List
+                            </Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate("/")}>
+                              <Plus className="w-4 h-4" /> Manual DC
+                            </Button>
+                          </SheetClose>
+                          <Button variant="outline" className="w-full justify-start gap-2" disabled>
+                            <FileText className="w-4 h-4" /> Saved DC List
+                          </Button>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="text-xs font-semibold text-muted-foreground">Actions</div>
+                          <SheetClose asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={handleExportCSV}>
+                              <Download className="w-4 h-4" /> Export CSV
+                            </Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate("/admin")}>
+                              <Wrench className="w-4 h-4" /> Admin
+                            </Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={handleLogout}>
+                              <LogOut className="w-4 h-4" /> Logout
+                            </Button>
+                          </SheetClose>
+                        </div>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
+
+                {/* Desktop actions */}
+                <div className="hidden md:flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="gap-2" onClick={handleExportCSV}>
+                    <Download className="w-4 h-4" /> Export
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/admin")}>
+                    <Wrench className="w-4 h-4" /> Admin
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={handleLogout}>
+                    <LogOut className="w-4 h-4" /> Logout
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -665,7 +724,7 @@ const SavedDcs = () => {
           <div className="space-y-8">
         {/* Dashboard Metrics */}
         {savedDcs.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="glass-card border-2 border-slate-200 bg-white hover:shadow-lg transition-all duration-200">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -737,8 +796,8 @@ const SavedDcs = () => {
               {/* Modern Filters */}
               <div className="space-y-6">
                 {/* Quick Actions Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/10 border border-border/50">
-                  <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/10 border border-border/50">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 min-w-0">
                     <div className="flex items-center gap-2">
                       <Filter className="h-5 w-5 text-primary" />
                       <span className="font-semibold text-sm">Quick Filters</span>
@@ -793,7 +852,7 @@ const SavedDcs = () => {
                 </div>
 
                 {/* Advanced Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-slate-700 flex items-center gap-2">
                       <Search className="h-3.5 w-3.5 text-slate-600" />
@@ -902,7 +961,7 @@ const SavedDcs = () => {
 
               {/* Queue Tabs */}
               <Tabs value={activeQueue} onValueChange={(value) => setActiveQueue(value as SavedDcStatus)}>
-                <TabsList className="grid grid-cols-2 lg:grid-cols-4 bg-muted/30 border border-border/50 h-12 p-1 rounded-xl">
+                <TabsList className="grid grid-cols-2 sm:grid-cols-4 bg-muted/30 border border-border/50 h-12 p-1 rounded-xl">
                   <TabsTrigger
                     value="pending"
                     className="gap-2 relative rounded-lg data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground transition-all"
@@ -1012,46 +1071,46 @@ const SavedDcs = () => {
                   </div>
                 ) : (
                   <div className="border-2 border-slate-300 rounded-lg overflow-hidden">
-                    <div className="max-h-[60vh] overflow-auto">
-                      <table className="w-full border-separate border-spacing-0">
+                    <div className="max-h-[60vh] overflow-y-auto overflow-x-auto">
+                      <table className="min-w-[980px] w-max border-separate border-spacing-0">
                       <thead>
                         <tr className="bg-slate-100 border-b-2 border-slate-300 sticky top-0 z-10">
-                          <th className="text-center p-4 text-sm font-bold text-slate-700 w-[60px] border-r-2 border-slate-300">
+                          <th className="text-center p-2 sm:p-4 text-sm font-bold text-slate-700 w-[60px] border-r-2 border-slate-300">
                             Select
                           </th>
-                          <th className="text-left p-4 text-sm font-bold text-slate-700 w-[120px] border-r-2 border-slate-300">
+                          <th className="text-left p-2 sm:p-4 text-sm font-bold text-slate-700 w-[120px] border-r-2 border-slate-300">
                             <SortableHeader sortKey="date">
                               <Calendar className="h-4 w-4 mr-1" />
                               Date
                             </SortableHeader>
                           </th>
-                          <th className="text-left p-4 text-sm font-bold text-slate-700 w-[120px] border-r-2 border-slate-300">
+                          <th className="text-left p-2 sm:p-4 text-sm font-bold text-slate-700 w-[120px] border-r-2 border-slate-300">
                             <SortableHeader sortKey="dcNo">
                               DC No
                             </SortableHeader>
                           </th>
-                          <th className="text-left p-4 text-sm font-bold text-slate-700 border-r-2 border-slate-300">
+                          <th className="text-left p-2 sm:p-4 text-sm font-bold text-slate-700 border-r-2 border-slate-300">
                             <SortableHeader sortKey="party">
                               Party Name
                             </SortableHeader>
                           </th>
-                          <th className="text-center p-4 text-sm font-bold text-slate-700 w-[100px] border-r-2 border-slate-300">
+                          <th className="text-center p-2 sm:p-4 text-sm font-bold text-slate-700 w-[100px] border-r-2 border-slate-300">
                             <SortableHeader sortKey="items">
                               <Package className="h-4 w-4 mr-1" />
                               Items
                             </SortableHeader>
                           </th>
-                          <th className="text-center p-4 text-sm font-bold text-slate-700 w-[100px] border-r-2 border-slate-300">
+                          <th className="text-center p-2 sm:p-4 text-sm font-bold text-slate-700 w-[100px] border-r-2 border-slate-300">
                             <SortableHeader sortKey="days">
                               Days
                             </SortableHeader>
                           </th>
-                          <th className="text-center p-4 text-sm font-bold text-slate-700 w-[120px] border-r-2 border-slate-300">
+                          <th className="text-center p-2 sm:p-4 text-sm font-bold text-slate-700 w-[120px] border-r-2 border-slate-300">
                             <SortableHeader sortKey="status">
                               Status
                             </SortableHeader>
                           </th>
-                          <th className="text-center p-4 text-sm font-bold text-slate-700 w-[120px]">
+                          <th className="text-center p-2 sm:p-4 text-sm font-bold text-slate-700 w-[120px]">
                             Actions
                           </th>
                         </tr>
