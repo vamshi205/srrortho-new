@@ -848,53 +848,41 @@ const SavedDcs = () => {
                 </div>
 
                 {/* Advanced Filters */}
-                <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-4">
+                <div className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-4">
                   {/* Search */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
-                      <Search className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-600" />
+                  <div className="space-y-1">
+                    <label className="text-[10px] sm:text-xs font-medium text-slate-700 flex items-center gap-1">
+                      <Search className="h-3 w-3 text-slate-600" />
                       Search
                     </label>
                     <Input
                       value={filterText}
                       onChange={(e) => setFilterText(e.target.value)}
                       placeholder="Party or DC no..."
-                      className="h-9 text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500"
+                      className="h-7 sm:h-9 text-[11px] sm:text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500 px-2"
                     />
                   </div>
 
                   {/* Date Range - inline on mobile */}
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5 mb-1.5">
-                      <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-600" />
+                    <label className="text-[10px] sm:text-xs font-medium text-slate-700 flex items-center gap-1 mb-1">
+                      <Calendar className="h-3 w-3 text-slate-600" />
                       Date Range
                     </label>
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          type="date"
-                          value={dateFrom}
-                          onChange={(e) => setDateFrom(e.target.value)}
-                          className="h-9 text-xs sm:text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500 pr-2 [&::-webkit-calendar-picker-indicator]:opacity-70"
-                          placeholder="From"
-                        />
-                        {!dateFrom && (
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">From</span>
-                        )}
-                      </div>
-                      <span className="text-slate-400 text-xs flex-shrink-0">→</span>
-                      <div className="relative flex-1">
-                        <Input
-                          type="date"
-                          value={dateTo}
-                          onChange={(e) => setDateTo(e.target.value)}
-                          className="h-9 text-xs sm:text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500 pr-2 [&::-webkit-calendar-picker-indicator]:opacity-70"
-                          placeholder="To"
-                        />
-                        {!dateTo && (
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">To</span>
-                        )}
-                      </div>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="h-7 sm:h-9 text-[11px] sm:text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500 px-2 flex-1 min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3"
+                      />
+                      <span className="text-slate-400 text-[10px] flex-shrink-0">to</span>
+                      <Input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="h-7 sm:h-9 text-[11px] sm:text-sm border-slate-300 bg-slate-50 focus:border-blue-500 focus:ring-blue-500 px-2 flex-1 min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:w-3 [&::-webkit-calendar-picker-indicator]:h-3"
+                      />
                     </div>
                   </div>
                 </div>
@@ -972,7 +960,7 @@ const SavedDcs = () => {
                     className="gap-1 sm:gap-2 relative rounded-lg text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground transition-all"
                   >
                     <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="font-medium hidden xs:inline">Pending</span>
+                    <span className="font-medium hidden sm:inline">Pending</span>
                     {statusCounts.pending > 0 && (
                       <Badge
                         variant="destructive"
@@ -987,7 +975,7 @@ const SavedDcs = () => {
                     className="gap-1 sm:gap-2 relative rounded-lg text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
                   >
                     <User className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="font-medium hidden xs:inline">Returned</span>
+                    <span className="font-medium hidden sm:inline">Returned</span>
                     {statusCounts.returned > 0 && (
                       <Badge
                         variant="default"
@@ -1002,7 +990,7 @@ const SavedDcs = () => {
                     className="gap-1 sm:gap-2 relative rounded-lg text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all"
                   >
                     <Receipt className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="font-medium hidden xs:inline">Done</span>
+                    <span className="font-medium hidden sm:inline">Completed</span>
                     {statusCounts.completed > 0 && (
                       <Badge
                         variant="secondary"
@@ -1017,7 +1005,7 @@ const SavedDcs = () => {
                     className="gap-1 sm:gap-2 relative rounded-lg text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
                   >
                     <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="font-medium hidden xs:inline">Cash</span>
+                    <span className="font-medium hidden sm:inline">Cash</span>
                     {statusCounts.cash > 0 && (
                       <Badge
                         variant="outline"
