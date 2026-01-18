@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { auth } from '@/firebase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,23 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      // Ensure persistence is set to local (survives browser restarts)
+      await setPersistence(auth, browserLocalPersistence);
       await signInWithEmailAndPassword(auth, email, password);
       toast.success('Logged in successfully');
-      navigate('/');
+      
+      // Use a small delay to ensure Auth state is updated before redirecting
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 500);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to login');
+      console.error('Login error:', error);
+      let message = 'Failed to login';
+      if (error.code === 'auth/user-not-found') message = 'No user found with this email';
+      else if (error.code === 'auth/wrong-password') message = 'Incorrect password';
+      else if (error.code === 'auth/invalid-credential') message = 'Invalid email or password';
+      
+      toast.error(message);
     } finally {
       setLoading(false);
     }
